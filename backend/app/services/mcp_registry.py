@@ -715,6 +715,227 @@ _reg(MCPServerEntry(
     tags=["ml", "inference", "models", "image-generation"],
 ))
 
+# ---- Cloud / Infrastructure (critical) ----
+
+_reg(MCPServerEntry(
+    id="aws",
+    name="AWS",
+    description=(
+        "Official AWS MCP servers — CDK advice, cost analysis, documentation search, "
+        "Bedrock Knowledge Base retrieval, and Nova Canvas image generation. "
+        "Covers the full AWS developer workflow from infrastructure-as-code to AI services."
+    ),
+    category=MCPCategory.DEV_TOOLS,
+    command="npx",
+    args=["-y", "@awslabs/mcp-server-aws-core"],
+    required_env=["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+    optional_env=["AWS_REGION", "AWS_SESSION_TOKEN"],
+    npm_package="@awslabs/mcp-server-aws-core",
+    documentation_url="https://github.com/awslabs/mcp",
+    icon="🟠",
+    tags=["aws", "cloud", "infrastructure", "cdk", "bedrock", "s3", "lambda"],
+    is_official=True,
+))
+
+_reg(MCPServerEntry(
+    id="azure-devops",
+    name="Azure DevOps",
+    description="Manage Azure DevOps projects — work items, repos, pipelines, boards, and sprints.",
+    category=MCPCategory.DEV_TOOLS,
+    command="npx",
+    args=["-y", "@microsoft/azure-devops-mcp-server"],
+    required_env=["AZURE_DEVOPS_ORG_URL", "AZURE_DEVOPS_PAT"],
+    npm_package="@microsoft/azure-devops-mcp-server",
+    documentation_url="https://github.com/microsoft/azure-devops-mcp",
+    icon="🔷",
+    tags=["azure", "devops", "ci-cd", "pipelines", "work-items", "microsoft"],
+    is_official=True,
+))
+
+_reg(MCPServerEntry(
+    id="microsoft-365",
+    name="Microsoft 365",
+    description=(
+        "Access Microsoft 365 suite via Graph API — Outlook email, Teams messages, "
+        "Excel spreadsheets, OneDrive files, and SharePoint sites."
+    ),
+    category=MCPCategory.PRODUCTIVITY,
+    command="npx",
+    args=["-y", "@microsoft/microsoft-365-mcp-server"],
+    required_env=["MS365_CLIENT_ID", "MS365_CLIENT_SECRET", "MS365_TENANT_ID"],
+    optional_env=["MS365_USER_ID"],
+    npm_package="@microsoft/microsoft-365-mcp-server",
+    icon="Ⓜ️",
+    tags=["outlook", "teams", "excel", "onedrive", "sharepoint", "microsoft", "office"],
+))
+
+_reg(MCPServerEntry(
+    id="bigquery",
+    name="BigQuery",
+    description="Query Google BigQuery data warehouse — run SQL, explore schemas, manage datasets.",
+    category=MCPCategory.DATA,
+    command="npx",
+    args=["-y", "mcp-server-bigquery"],
+    required_env=["GOOGLE_PROJECT_ID"],
+    optional_env=["GOOGLE_APPLICATION_CREDENTIALS", "BIGQUERY_DATASET"],
+    npm_package="mcp-server-bigquery",
+    documentation_url="https://github.com/LucasHild/mcp-server-bigquery",
+    icon="📊",
+    tags=["data-warehouse", "sql", "analytics", "google-cloud", "bigquery"],
+))
+
+# ---- Data (additional — important gaps) ----
+
+_reg(MCPServerEntry(
+    id="youtube",
+    name="YouTube",
+    description="Fetch YouTube video subtitles and transcripts for content analysis.",
+    category=MCPCategory.DATA,
+    command="npx",
+    args=["-y", "mcp-youtube"],
+    required_env=[],
+    optional_env=["YOUTUBE_API_KEY"],
+    npm_package="mcp-youtube",
+    documentation_url="https://github.com/anaisbetts/mcp-youtube",
+    icon="▶️",
+    tags=["youtube", "video", "transcripts", "subtitles", "content"],
+))
+
+_reg(MCPServerEntry(
+    id="airtable",
+    name="Airtable",
+    description="Read and write Airtable bases — list records, create/update rows, manage tables.",
+    category=MCPCategory.DATA,
+    command="npx",
+    args=["-y", "airtable-mcp-server"],
+    required_env=["AIRTABLE_API_KEY"],
+    optional_env=["AIRTABLE_BASE_ID"],
+    npm_package="airtable-mcp-server",
+    documentation_url="https://github.com/domdomegg/airtable-mcp-server",
+    icon="📗",
+    tags=["spreadsheet", "database", "no-code", "airtable"],
+))
+
+_reg(MCPServerEntry(
+    id="contentful",
+    name="Contentful",
+    description="Manage Contentful CMS — read/write entries, assets, content types, and spaces.",
+    category=MCPCategory.DATA,
+    command="npx",
+    args=["-y", "contentful-mcp-server"],
+    required_env=["CONTENTFUL_SPACE_ID", "CONTENTFUL_ACCESS_TOKEN"],
+    optional_env=["CONTENTFUL_MANAGEMENT_TOKEN"],
+    npm_package="contentful-mcp-server",
+    icon="📰",
+    tags=["cms", "headless-cms", "content", "contentful"],
+))
+
+_reg(MCPServerEntry(
+    id="dynamodb",
+    name="DynamoDB",
+    description="Interact with AWS DynamoDB — query tables, put/get items, scan, and manage indexes.",
+    category=MCPCategory.DATA,
+    command="npx",
+    args=["-y", "dynamodb-mcp-server"],
+    required_env=["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+    optional_env=["AWS_REGION", "DYNAMODB_TABLE_NAME"],
+    npm_package="dynamodb-mcp-server",
+    documentation_url="https://www.dynamodbtoolbox.com/docs/databases/actions/mcp-toolkit",
+    icon="⚙️",
+    tags=["nosql", "database", "aws", "serverless", "dynamodb"],
+))
+
+# ---- Productivity (additional — important gaps) ----
+
+_reg(MCPServerEntry(
+    id="obsidian",
+    name="Obsidian",
+    description="Read, search, and manage notes in Obsidian vaults via the Local REST API plugin.",
+    category=MCPCategory.PRODUCTIVITY,
+    command="npx",
+    args=["-y", "obsidian-mcp-server"],
+    required_env=["OBSIDIAN_REST_API_KEY"],
+    optional_env=["OBSIDIAN_REST_API_URL"],
+    npm_package="obsidian-mcp-server",
+    icon="💎",
+    tags=["notes", "knowledge-management", "markdown", "obsidian", "pkm"],
+))
+
+_reg(MCPServerEntry(
+    id="make",
+    name="Make (Integromat)",
+    description="Trigger and manage Make automation scenarios — list, run, and monitor workflows.",
+    category=MCPCategory.PRODUCTIVITY,
+    command="npx",
+    args=["-y", "make-mcp-server"],
+    required_env=["MAKE_API_TOKEN"],
+    optional_env=["MAKE_TEAM_ID"],
+    npm_package="make-mcp-server",
+    icon="🔧",
+    tags=["automation", "workflows", "integromat", "no-code", "make"],
+))
+
+# ---- Dev Tools (additional — important gaps) ----
+
+_reg(MCPServerEntry(
+    id="postman",
+    name="Postman",
+    description="Official Postman MCP — manage collections, environments, run API requests, and test APIs.",
+    category=MCPCategory.DEV_TOOLS,
+    command="npx",
+    args=["-y", "@postmanlabs/postman-mcp-server"],
+    required_env=["POSTMAN_API_KEY"],
+    npm_package="@postmanlabs/postman-mcp-server",
+    documentation_url="https://github.com/postmanlabs/postman-mcp-server",
+    icon="📮",
+    tags=["api", "testing", "collections", "rest", "postman"],
+    is_official=True,
+))
+
+_reg(MCPServerEntry(
+    id="sonarqube",
+    name="SonarQube",
+    description="Analyze code quality and security — scan code snippets, view issues, manage quality gates.",
+    category=MCPCategory.DEV_TOOLS,
+    command="npx",
+    args=["-y", "@sonarsource/sonarqube-mcp-server"],
+    required_env=["SONARQUBE_URL", "SONARQUBE_TOKEN"],
+    optional_env=["SONARQUBE_PROJECT_KEY"],
+    npm_package="@sonarsource/sonarqube-mcp-server",
+    documentation_url="https://github.com/SonarSource/sonarqube-mcp-server",
+    icon="📐",
+    tags=["code-quality", "security", "static-analysis", "sonarqube"],
+    is_official=True,
+))
+
+# ---- IoT / Media (important gaps) ----
+
+_reg(MCPServerEntry(
+    id="home-assistant",
+    name="Home Assistant",
+    description="Control smart home devices — lights, switches, sensors, automations, and scenes via Home Assistant.",
+    category=MCPCategory.DATA,
+    command="npx",
+    args=["-y", "homeassistant-mcp-server"],
+    required_env=["HASS_URL", "HASS_TOKEN"],
+    npm_package="homeassistant-mcp-server",
+    icon="🏠",
+    tags=["iot", "smart-home", "automation", "home-assistant", "devices"],
+))
+
+_reg(MCPServerEntry(
+    id="spotify",
+    name="Spotify",
+    description="Control Spotify playback — search tracks, manage playlists, play/pause, and get recommendations.",
+    category=MCPCategory.DATA,
+    command="npx",
+    args=["-y", "spotify-mcp-server"],
+    required_env=["SPOTIFY_CLIENT_ID", "SPOTIFY_CLIENT_SECRET", "SPOTIFY_REFRESH_TOKEN"],
+    npm_package="spotify-mcp-server",
+    icon="🎵",
+    tags=["music", "audio", "playback", "spotify", "media"],
+))
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------

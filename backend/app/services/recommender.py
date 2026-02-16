@@ -82,6 +82,31 @@ _KEYWORD_TO_SERVER_ID: Dict[str, str] = {
     # --- ai / ml ---
     "replicate": "replicate", "image generation": "replicate",
     "ml models": "replicate", "stable diffusion": "replicate",
+    # --- cloud / infrastructure (critical) ---
+    "aws": "aws", "amazon web services": "aws", "s3": "aws", "lambda": "aws",
+    "ec2": "aws", "cloudformation": "aws", "cdk": "aws", "bedrock": "aws",
+    "azure devops": "azure-devops", "azure pipelines": "azure-devops",
+    "azure boards": "azure-devops", "azure repos": "azure-devops",
+    "microsoft 365": "microsoft-365", "office 365": "microsoft-365",
+    "outlook": "microsoft-365", "teams": "microsoft-365", "excel": "microsoft-365",
+    "onedrive": "microsoft-365", "sharepoint": "microsoft-365",
+    "bigquery": "bigquery", "big query": "bigquery", "google bigquery": "bigquery",
+    # --- data (important gaps) ---
+    "youtube": "youtube", "video transcripts": "youtube", "subtitles": "youtube",
+    "airtable": "airtable", "air table": "airtable",
+    "contentful": "contentful", "headless cms": "contentful", "cms": "contentful",
+    "dynamodb": "dynamodb", "dynamo": "dynamodb", "dynamo db": "dynamodb",
+    # --- productivity (important gaps) ---
+    "obsidian": "obsidian", "obsidian notes": "obsidian", "pkm": "obsidian",
+    "make": "make", "integromat": "make", "make.com": "make",
+    # --- dev tools (important gaps) ---
+    "postman": "postman", "api testing": "postman", "api collections": "postman",
+    "sonarqube": "sonarqube", "sonar": "sonarqube", "code quality": "sonarqube",
+    "static analysis": "sonarqube",
+    # --- iot / media (important gaps) ---
+    "home assistant": "home-assistant", "smart home": "home-assistant",
+    "iot": "home-assistant", "hass": "home-assistant",
+    "spotify": "spotify", "music": "spotify", "playlist": "spotify",
 }
 
 # Use-case → default framework
