@@ -76,6 +76,46 @@ def _get_client() -> anthropic.Anthropic:
     return anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
 
+def _build_context_summary(session: WizardSession) -> str:
+    """Build a dynamic context snapshot of gathered requirements.
+
+    This is appended to the system prompt on every turn so Claude always
+    has a clear picture of the current state — even if the conversation
+    is long and earlier details would otherwise drift out of focus.
+    """
+    r = session.requirements
+    parts: list[str] = []
+    if r.use_case:
+        parts.append(f"Use case: {r.use_case}")
+    if r.description:
+        parts.append(f"Description: {r.description}")
+    if r.integrations:
+        parts.append(f"Integrations: {', '.join(r.integrations)}")
+    if r.capabilities:
+        parts.append(f"Capabilities: {', '.join(r.capabilities)}")
+    if r.scale:
+        parts.append(f"Scale: {r.scale}")
+    if r.compliance:
+        parts.append(f"Compliance: {', '.join(r.compliance)}")
+    if r.framework_preference:
+        parts.append(f"Framework preference: {r.framework_preference.value}")
+    if r.deployment_preference:
+        parts.append(f"Deployment preference: {r.deployment_preference.value}")
+    if r.additional_notes:
+        parts.append(f"Notes: {r.additional_notes}")
+
+    if not parts:
+        return ""
+
+    return (
+        "\n\n--- CONTEXT SNAPSHOT (gathered so far) ---\n"
+        + "\n".join(f"• {p}" for p in parts)
+        + "\n--- END SNAPSHOT ---\n"
+        "Use this snapshot to stay grounded. Update requirements to include "
+        "any new details the user provides this turn."
+    )
+
+
 def _build_messages(session: WizardSession) -> list[dict]:
     """Convert session messages to Anthropic API format."""
     return [
@@ -128,13 +168,26 @@ async def process_message(
             status=session.status,
         )
 
-    # --- Call Claude ---
+    # --- Call Claude (with dynamic context snapshot) ---
     try:
         client = _get_client()
+        context_snapshot = _build_context_summary(session)
+        system_with_context = SYSTEM_PROMPT + context_snapshot
+        logger.info(
+            "Turn %d | session=%s | context_fields=%d",
+            len([m for m in session.messages if m.role == Role.USER]),
+            session.session_id,
+            sum(1 for v in [
+                session.requirements.use_case,
+                session.requirements.integrations,
+                session.requirements.capabilities,
+                session.requirements.scale,
+            ] if v),
+        )
         response = client.messages.create(
             model=settings.llm_model,
             max_tokens=1024,
-            system=SYSTEM_PROMPT,
+            system=system_with_context,
             messages=_build_messages(session),
         )
         raw_reply = response.content[0].text
