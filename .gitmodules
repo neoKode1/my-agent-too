@@ -1,0 +1,3 @@
+[submodule "nanda-index"]
+	path = nanda-index
+	url = https://github.com/neoKode1/nanda-index.git
