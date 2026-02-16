@@ -14,6 +14,8 @@ class MCPCategory(str, Enum):
     PRODUCTIVITY = "productivity"
     SEARCH = "search"
     AI_ML = "ai-ml"
+    FINANCE = "finance"
+    INTELLIGENCE = "intelligence"
     CUSTOM = "custom"
 
 
@@ -39,6 +41,7 @@ class MCPServerEntry(BaseModel):
     category: MCPCategory
     command: str = "npx"
     args: List[str] = Field(default_factory=list)
+    endpoint_url: Optional[str] = None  # For HTTP/SSE MCP servers (non-stdio)
     required_env: List[str] = Field(default_factory=list)
     optional_env: List[str] = Field(default_factory=list)
     npm_package: Optional[str] = None

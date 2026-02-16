@@ -159,6 +159,7 @@ export interface MCPServerEntry {
   category: string;
   command: string;
   args: string[];
+  endpoint_url: string | null;
   required_env: string[];
   optional_env: string[];
   npm_package: string | null;

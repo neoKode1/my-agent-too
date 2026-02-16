@@ -17,22 +17,71 @@ from app.services.mcp_registry import get_server, list_servers
 
 # Keyword → server_id mapping (fuzzy match helper)
 _KEYWORD_TO_SERVER_ID: Dict[str, str] = {
+    # --- original 17 ---
     "salesforce": "salesforce", "sfdc": "salesforce", "crm": "salesforce",
     "slack": "slack",
-    "github": "github", "git": "github", "gitlab": "github",
+    "github": "github",
     "postgres": "postgres", "postgresql": "postgres", "sql": "postgres",
     "sqlite": "sqlite",
     "email": "email", "smtp": "email", "mail": "email",
-    "search": "web-search", "web": "web-search", "google search": "web-search",
+    "search": "web-search", "brave search": "web-search", "google search": "web-search",
     "mongo": "mongodb", "mongodb": "mongodb",
     "notion": "notion",
     "drive": "google-drive", "google drive": "google-drive", "gdrive": "google-drive",
     "discord": "discord",
     "linear": "linear",
-    "jira": "jira",
+    "jira": "jira", "atlassian jira": "jira",
     "filesystem": "filesystem", "files": "filesystem", "file system": "filesystem",
-    "arxiv": "arxiv", "papers": "arxiv",
+    "arxiv": "arxiv", "papers": "arxiv", "academic papers": "arxiv",
     "huggingface": "huggingface", "hugging face": "huggingface", "hf": "huggingface",
+    "breach": "breach", "intelligence": "breach", "facilities": "breach",
+    "defense": "breach", "military": "breach", "clawbot": "breach",
+    "research facilities": "breach", "knowledge graph": "breach",
+    "satellite": "breach", "palantir": "breach",
+    # --- official reference servers ---
+    "fetch": "fetch", "web fetch": "fetch", "scrape": "fetch", "scraping": "fetch",
+    "git": "git", "version control": "git", "git log": "git", "git diff": "git",
+    "memory": "memory", "remember": "memory", "persistent memory": "memory",
+    "sequential thinking": "sequential-thinking", "reasoning": "sequential-thinking",
+    "chain of thought": "sequential-thinking", "thinking": "sequential-thinking",
+    "time": "time", "timezone": "time", "clock": "time", "datetime": "time",
+    # --- data / database ---
+    "mysql": "mysql", "mariadb": "mysql",
+    "redis": "redis", "cache": "redis", "key-value": "redis",
+    "supabase": "supabase", "supabase db": "supabase",
+    "snowflake": "snowflake", "data warehouse": "snowflake",
+    "pinecone": "pinecone", "vector database": "pinecone", "vector db": "pinecone",
+    "embeddings": "pinecone", "rag": "pinecone",
+    "neo4j": "neo4j", "graph database": "neo4j", "cypher": "neo4j",
+    # --- communication ---
+    "twilio": "twilio", "sms": "twilio", "phone": "twilio", "voice": "twilio",
+    "telegram": "telegram", "telegram bot": "telegram",
+    "twitter": "twitter", "x": "twitter", "tweets": "twitter", "social media": "twitter",
+    # --- dev tools ---
+    "gitlab": "gitlab", "merge request": "gitlab",
+    "sentry": "sentry", "error tracking": "sentry", "error monitoring": "sentry",
+    "docker": "docker", "containers": "docker", "dockerfile": "docker",
+    "kubernetes": "kubernetes", "k8s": "kubernetes", "pods": "kubernetes",
+    "puppeteer": "puppeteer", "browser automation": "puppeteer", "screenshot": "puppeteer",
+    "playwright": "playwright", "cross-browser": "playwright", "e2e testing": "playwright",
+    "cloudflare": "cloudflare", "workers": "cloudflare", "cdn": "cloudflare",
+    # --- productivity ---
+    "google calendar": "google-calendar", "calendar": "google-calendar",
+    "gcal": "google-calendar", "scheduling": "google-calendar",
+    "trello": "trello", "kanban": "trello", "boards": "trello",
+    "todoist": "todoist", "todo": "todoist", "tasks": "todoist",
+    "confluence": "confluence", "wiki": "confluence", "atlassian confluence": "confluence",
+    # --- search ---
+    "tavily": "tavily", "ai search": "tavily",
+    "exa": "exa", "neural search": "exa", "semantic search": "exa",
+    # --- finance / commerce ---
+    "stripe": "stripe", "payments": "stripe", "billing": "stripe",
+    "subscriptions": "stripe", "invoices": "stripe",
+    "shopify": "shopify", "ecommerce": "shopify", "e-commerce": "shopify",
+    "online store": "shopify", "products": "shopify",
+    # --- ai / ml ---
+    "replicate": "replicate", "image generation": "replicate",
+    "ml models": "replicate", "stable diffusion": "replicate",
 }
 
 # Use-case → default framework
