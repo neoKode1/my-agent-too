@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+{% for server in mcp_servers %}
+    "{{ server.name }}": {
+      "command": "{{ server.command }}",
+      "args": {{ server.args | tojson }},
+      "env": {
+{% for var in server.required_env %}
+        "{{ var }}": "{{ '${' }}{{ var }}{{ '}' }}"{{ "," if not loop.last else "" }}
+{% endfor %}
+      }
+    }{{ "," if not loop.last else "" }}
+{% endfor %}
+  }
+}
+
