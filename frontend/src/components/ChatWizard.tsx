@@ -9,6 +9,7 @@ import {
   Recommendation,
   sendMessage,
 } from "@/lib/api";
+import MonkeyIcon from "@/components/MonkeyIcon";
 
 interface DisplayMessage {
   role: "user" | "assistant";
@@ -204,7 +205,7 @@ export default function ChatWizard() {
       {
         role: "assistant",
         content:
-          "Welcome to **My-Agent-Too** — build a custom AI agent in minutes.\n\nTell me what you need, and I'll handle the rest. Here are some ideas:\n\n🔧 \"I'm a plumber — I need something to answer calls and book jobs when I'm on-site\"\n💇 \"I run a salon and need help managing appointments and sending reminders\"\n💻 \"Build me an agent that monitors my GitHub repos and posts summaries to Slack\"\n📋 \"I need a customer service agent that handles email and tracks issues\"",
+          "Welcome to **+12 Monkeys** — build a custom AI agent in minutes.\n\nTell me what you need, and I'll handle the rest. Here are some ideas:\n\n🔧 \"I'm a plumber — I need something to answer calls and book jobs when I'm on-site\"\n💇 \"I run a salon and need help managing appointments and sending reminders\"\n💻 \"Build me an agent that monitors my GitHub repos and posts summaries to Slack\"\n📋 \"I need a customer service agent that handles email and tracks issues\"",
       },
     ]);
   }, []);
@@ -277,16 +278,16 @@ export default function ChatWizard() {
       {/* ══════════ Top Header Bar ══════════ */}
       <header className="border-b" style={{ borderColor: "#1A1A1A" }}>
         <div className="flex items-center justify-between px-5 py-3">
-          {/* Left: close */}
-          <button className="p-1.5 rounded-lg transition hover:bg-white/10 text-[#888]">
-            <IconX />
-          </button>
-
-          {/* Center: title */}
-          <div className="flex items-center gap-1.5 px-3 py-1 text-sm text-[#ccc]">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6C63FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/></svg>
-            My-Agent-Too
+          {/* Left: brand icon + name */}
+          <div className="flex items-center gap-2">
+            <MonkeyIcon size={28} />
+            <span className="text-sm font-semibold tracking-tight text-[#E8E8E8]">
+              <span className="text-[#6C63FF]">+12</span> Monkeys
+            </span>
           </div>
+
+          {/* Center: stepper (moved here for balance) */}
+          <ProgressStepper status={status} />
 
           {/* Right: actions */}
           <div className="flex items-center gap-1">
@@ -300,8 +301,6 @@ export default function ChatWizard() {
             ))}
           </div>
         </div>
-        {/* Progress stepper */}
-        <ProgressStepper status={status} />
       </header>
 
       {/* ══════════ Messages ══════════ */}

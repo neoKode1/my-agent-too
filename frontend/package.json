@@ -1,10 +1,10 @@
 {
-  "name": "frontend",
+  "name": "twelve-monkeys-frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --no-turbopack",
+    "build": "next build --no-turbopack",
     "start": "next start",
     "lint": "eslint"
   },

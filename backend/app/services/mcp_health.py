@@ -29,7 +29,7 @@ _JSONRPC_INIT = {
     "method": "initialize",
     "params": {
         "protocolVersion": "2024-11-05",
-        "clientInfo": {"name": "my-agent-too-healthcheck", "version": "0.1.0"},
+        "clientInfo": {"name": "twelve-monkeys-healthcheck", "version": "0.1.0"},
         "capabilities": {},
     },
 }

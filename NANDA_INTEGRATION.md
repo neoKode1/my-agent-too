@@ -1,19 +1,19 @@
 # 🔗 NANDA Index Integration Plan
 
-**How My-Agent-Too will integrate with NANDA Index for agent discovery and management**
+**How +12 Monkeys will integrate with NANDA Index for agent discovery and management**
 
 ---
 
 ## 🎯 Executive Summary
 
-**NANDA Index** is a unified agent registry that provides exactly what My-Agent-Too needs for its backend:
+**NANDA Index** is a unified agent registry that provides exactly what +12 Monkeys needs for its backend:
 - Agent registration and discovery
 - MongoDB persistence
 - MCP server registry
 - Cross-index federation (AGNTCY ADS integration)
 - Skill taxonomy mapping
 
-**Integration Strategy:** Use NANDA Index as the **core registry backend** for My-Agent-Too, eliminating the need to build a custom agent storage system.
+**Integration Strategy:** Use NANDA Index as the **core registry backend** for +12 Monkeys, eliminating the need to build a custom agent storage system.
 
 ---
 
@@ -37,7 +37,7 @@
 
 ## 🏗️ Integration Architecture
 
-### Before (Original My-Agent-Too Plan)
+### Before (Original +12 Monkeys Plan)
 ```
 User Chat → Agent Orchestrator → Template Selection → 
 Code Generation → PostgreSQL (custom schema) → Deployment
@@ -56,7 +56,7 @@ Code Generation → NANDA Index (agent registry) → Deployment
 ### System Diagram
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                   My-Agent-Too Platform                      │
+│                   +12 Monkeys Platform                       │
 │  ┌────────────────────────────────────────────────────────┐ │
 │  │  Frontend (Next.js)                                    │ │
 │  │  - Chat Interface                                      │ │
@@ -109,7 +109,7 @@ Code Generation → NANDA Index (agent registry) → Deployment
 **With NANDA:** Use NANDA's agent registry
 
 **How:**
-- When user creates an agent via My-Agent-Too chat
+- When user creates an agent via +12 Monkeys chat
 - Agent Orchestrator recommends architecture
 - Code Generator creates package
 - **Register agent in NANDA Index** via `POST /register`
@@ -117,7 +117,7 @@ Code Generation → NANDA Index (agent registry) → Deployment
 
 **Example:**
 ```python
-# my-agent-too/backend/nanda_client.py
+# +12monkeys/backend/nanda_client.py
 import requests
 
 class NANDAClient:
@@ -149,7 +149,7 @@ class NANDAClient:
 
 **How:**
 - NANDA already has `mcp_registry` collection in MongoDB
-- My-Agent-Too can query available MCP servers
+- +12 Monkeys can query available MCP servers
 - Agent Orchestrator uses this to recommend integrations
 
 **Example:**
@@ -199,7 +199,7 @@ def search_agents(self, query=None, capabilities=None, framework=None):
 
 **How:**
 - Enable federation: `ENABLE_FEDERATION=true`
-- My-Agent-Too can discover agents from external indices
+- +12 Monkeys can discover agents from external indices
 - Users can import agents from AGNTCY ecosystem
 
 **Example:**
@@ -246,7 +246,7 @@ def lookup_external_agent(self, agent_id):
 }
 ```
 
-**3. users** (My-Agent-Too specific - extend NANDA)
+**3. users** (+12 Monkeys specific - extend NANDA)
 ```javascript
 {
   user_id: "user_123",
@@ -257,7 +257,7 @@ def lookup_external_agent(self, agent_id):
 }
 ```
 
-**4. agent_projects** (My-Agent-Too specific - new collection)
+**4. agent_projects** (+12 Monkeys specific - new collection)
 ```javascript
 {
   project_id: "proj_456",
@@ -277,9 +277,9 @@ def lookup_external_agent(self, agent_id):
 ### Phase 0: Foundation (Weeks 1-2) - UPDATED
 - [x] Set up NANDA Index locally
 - [ ] Configure MongoDB connection
-- [ ] Create NANDA client library for My-Agent-Too
+- [ ] Create NANDA client library for +12 Monkeys
 - [ ] Test agent registration flow
-- [ ] Extend NANDA schema with My-Agent-Too specific fields
+- [ ] Extend NANDA schema with +12 Monkeys specific fields
 
 ### Phase 2: Agent Template Library (Weeks 5-6) - UPDATED
 - [ ] Register 5 core templates in NANDA Index
@@ -315,7 +315,7 @@ def lookup_external_agent(self, agent_id):
 1. ✅ Clone NANDA Index repository
 2. [ ] Set up local NANDA Index instance
 3. [ ] Test NANDA API endpoints
-4. [ ] Create NANDA client library for My-Agent-Too
+4. [ ] Create NANDA client library for +12 Monkeys
 5. [ ] Update SPRINT_PLAN.md with NANDA integration
 6. [ ] Begin Phase 0 implementation
 

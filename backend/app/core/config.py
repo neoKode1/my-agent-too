@@ -6,8 +6,8 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Central configuration – reads from env vars / .env file."""
 
-    # My-Agent-Too
-    app_name: str = "My-Agent-Too"
+    # +12 Monkeys
+    app_name: str = "+12 Monkeys"
     app_version: str = "0.1.0"
     debug: bool = False
 

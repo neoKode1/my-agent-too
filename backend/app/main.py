@@ -1,4 +1,4 @@
-"""My-Agent-Too — FastAPI application entry point."""
+"""+12 Monkeys — FastAPI application entry point."""
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

@@ -1,4 +1,4 @@
-# 🚀 My-Agent-Too: Sprint Plan
+# 🚀 +12 Monkeys: Sprint Plan
 ## Agent-as-a-Service Platform with MCP Integration
 
 **Project Vision:** A plug-and-play platform that enables developers to instantly deploy custom AI agent systems for any use case through conversational configuration.
@@ -44,7 +44,7 @@ Leading frameworks as of 2026:
 
 ---
 
-## 🎯 Product Vision: My-Agent-Too
+## 🎯 Product Vision: +12 Monkeys
 
 ### What It Is
 A **plug-and-play agent deployment platform** that:
@@ -70,7 +70,7 @@ A **plug-and-play agent deployment platform** that:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    MY-AGENT-TOO PLATFORM                     │
+│                    +12 MONKEYS PLATFORM                      │
 ├─────────────────────────────────────────────────────────────┤
 │                                                               │
 │  ┌───────────────────────────────────────────────────────┐  │
@@ -784,7 +784,7 @@ export class MCPManager {
     });
 
     const client = new Client({
-      name: "my-agent-too",
+      name: "+12monkeys",
       version: "1.0.0"
     }, {
       capabilities: {}

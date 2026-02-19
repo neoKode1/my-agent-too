@@ -1,4 +1,4 @@
-# Gap Analysis: My-Agent-Too + NANDA Index Feasibility
+# Gap Analysis: +12 Monkeys + NANDA Index Feasibility
 
 **Date:** February 2026
 **Scope:** Technical feasibility, code maturity, risk assessment, and strengthening recommendations
@@ -9,7 +9,7 @@
 
 **Verdict: FEASIBLE — with significant investment needed.**
 
-NANDA Index provides a solid *starting point* for the My-Agent-Too agent registry backend, but it is currently a **prototype-stage project**, not a production-ready platform. Using it saves ~2 weeks of building basic CRUD registry APIs from scratch, but we'll need ~4-6 weeks of hardening, refactoring, and feature extension before it can support My-Agent-Too's vision.
+NANDA Index provides a solid *starting point* for the +12 Monkeys agent registry backend, but it is currently a **prototype-stage project**, not a production-ready platform. Using it saves ~2 weeks of building basic CRUD registry APIs from scratch, but we'll need ~4-6 weeks of hardening, refactoring, and feature extension before it can support +12 Monkeys' vision.
 
 The Switchboard (cross-registry discovery) and AGNTCY interoperability are **unique differentiators** that no competing platform offers — this is the strongest reason to build on NANDA rather than starting from scratch.
 
@@ -67,11 +67,11 @@ No semantic search, no relevance scoring, no fuzzy matching.
 
 ---
 
-## 2. Feature Gap Analysis: NANDA vs. My-Agent-Too Requirements
+## 2. Feature Gap Analysis: NANDA vs. +12 Monkeys Requirements
 
 ### Critical Missing Features (Must Build)
 
-| My-Agent-Too Needs | NANDA Has | Gap |
+| +12 Monkeys Needs | NANDA Has | Gap |
 |---------------------|-----------|-----|
 | **Agent Templates** | ❌ Nothing | Need template storage, versioning, and code generation support |
 | **MCP Server Configuration** | ⚠️ Stub only | `/mcp_servers` is a filter hack; `/get_mcp_registry` queries MongoDB but no write endpoint |
@@ -151,12 +151,12 @@ No semantic search, no relevance scoring, no fuzzy matching.
 ### 🟡 Medium-Risk Items
 
 **R5: Flask May Not Scale for Async Workloads**
-- My-Agent-Too will need async for LLM calls, agent health checks, and package generation
+- +12 Monkeys will need async for LLM calls, agent health checks, and package generation
 - *Mitigation:* Plan migration to FastAPI (or add async support via Quart) in Phase 2
 
 **R6: MongoDB Schema Needs Significant Extension**
 - Current schema is flat (agent_id, agent_url, api_url, alive, assigned_to)
-- My-Agent-Too needs: templates, versions, configurations, deployments, billing
+- +12 Monkeys needs: templates, versions, configurations, deployments, billing
 - *Mitigation:* Design extended schema before building; use MongoDB's flexibility to evolve
 
 **R7: Test Coverage is Incomplete**
@@ -186,7 +186,7 @@ No semantic search, no relevance scoring, no fuzzy matching.
 | **CrewAI Enterprise** | Agent Platform | Custom pricing | Multi-agent orchestration, production-ready | Closed source, crew-specific paradigm |
 | **LangGraph Cloud** | Infrastructure | Pay-per-use | State management, checkpointing, human-in-loop | LangChain-specific, complex |
 | **Google Vertex AI Agent Builder** | Cloud SaaS | Pay-per-use | Google Cloud integration, Gemini models | Google Cloud lock-in |
-| **My-Agent-Too** | Open Platform | Freemium | Framework-agnostic, open standards, cross-registry | Not yet built |
+| **+12 Monkeys** | Open Platform | Freemium | Framework-agnostic, open standards, cross-registry | Not yet built |
 
 ### Our Unique Differentiators
 
@@ -233,7 +233,7 @@ No semantic search, no relevance scoring, no fuzzy matching.
 
 | # | Action | Effort | Impact |
 |---|--------|--------|--------|
-| 11 | **Build Agent Template system** | 2 weeks | Core My-Agent-Too feature |
+| 11 | **Build Agent Template system** | 2 weeks | Core +12 Monkeys feature |
 | 12 | **Build proper MCP Server Registry** (with write endpoints) | 1 week | MCP-native promise |
 | 13 | **Add semantic search** (vector embeddings via MongoDB Atlas or Pinecone) | 1 week | Intelligent agent discovery |
 | 14 | **Add webhook/event system** | 1 week | Agent lifecycle visibility |
@@ -297,7 +297,7 @@ No semantic search, no relevance scoring, no fuzzy matching.
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  NANDA Index as My-Agent-Too Backend             │
+│  NANDA Index as +12 Monkeys Backend              │
 ├─────────────────────────────────────────────────┤
 │  Feasibility:          ██████████░░  YES (8/10)  │
 │  Code Maturity:        ██░░░░░░░░░░  LOW (2.6/10)│

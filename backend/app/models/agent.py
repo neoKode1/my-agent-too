@@ -1,4 +1,4 @@
-"""Pydantic models for agent data flowing through My-Agent-Too."""
+"""Pydantic models for agent data flowing through +12 Monkeys."""
 
 from datetime import datetime
 from typing import List, Optional

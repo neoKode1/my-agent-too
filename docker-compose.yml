@@ -22,7 +22,7 @@ services:
     environment:
       PORT: "6900"
       MONGODB_URI: "mongodb://mongo:27017"
-      MONGODB_DB: "my_agent_too"
+      MONGODB_DB: "twelve_monkeys"
     depends_on:
       mongo:
         condition: service_healthy
@@ -32,7 +32,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ---------- My-Agent-Too Backend ----------
+  # ---------- +12 Monkeys Backend ----------
   backend:
     build: ./backend
     ports:

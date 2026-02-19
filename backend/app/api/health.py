@@ -1,4 +1,4 @@
-"""Health / readiness endpoints for My-Agent-Too."""
+"""Health / readiness endpoints for +12 Monkeys."""
 
 from fastapi import APIRouter
 

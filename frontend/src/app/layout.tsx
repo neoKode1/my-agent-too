@@ -13,8 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "My-Agent-Too — Build AI Agents in Minutes",
+  title: "+12 Monkeys — Build AI Agents in Minutes",
   description: "Agent-as-a-Service platform with MCP integration",
+  icons: {
+    icon: "/monkey.svg",
+  },
 };
 
 export default function RootLayout({

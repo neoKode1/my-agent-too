@@ -1,4 +1,4 @@
-# My-Agent-Too: Quick Reference Guide
+# +12 Monkeys: Quick Reference Guide
 
 ## 🎯 Project Overview
 

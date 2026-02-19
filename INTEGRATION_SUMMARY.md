@@ -23,7 +23,7 @@
 
 ---
 
-## 🔗 Perfect Match for My-Agent-Too
+## 🔗 Perfect Match for +12 Monkeys
 
 ### What We Needed
 1. Agent template storage
@@ -49,12 +49,12 @@
 
 **Before:**
 ```
-My-Agent-Too → Custom PostgreSQL → Agent Storage
++12 Monkeys → Custom PostgreSQL → Agent Storage
 ```
 
 **After:**
 ```
-My-Agent-Too → NANDA Index (Flask API) → MongoDB
++12 Monkeys → NANDA Index (Flask API) → MongoDB
                      ↓
               Switchboard (AGNTCY ADS)
 ```
@@ -62,7 +62,7 @@ My-Agent-Too → NANDA Index (Flask API) → MongoDB
 ### Key Integration Points
 
 1. **Agent Registration**
-   - When user creates agent via My-Agent-Too
+   - When user creates agent via +12 Monkeys
    - Register in NANDA via `POST /register`
    - Store: name, capabilities, framework, MCP servers, deployment info
 
@@ -128,7 +128,7 @@ My-Agent-Too → NANDA Index (Flask API) → MongoDB
 - AGNTCY Dir SDK 0.4.0
 - gRPC (for ADS integration)
 
-**My-Agent-Too (Updated):**
+**+12 Monkeys (Updated):**
 - Frontend: Next.js 15, React 19, TypeScript
 - Backend: Node.js + Express (API), Python FastAPI (Agents)
 - Database: **MongoDB** (via NANDA) + Redis (sessions)

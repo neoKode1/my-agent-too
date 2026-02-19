@@ -1,4 +1,4 @@
-/** API client for the My-Agent-Too backend wizard endpoints. */
+/** API client for the +12 Monkeys backend wizard endpoints. */
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 

@@ -23,7 +23,7 @@
 - Industry backing (Linux Foundation)
 
 **Our Use Case:**
-- Core integration layer for My-Agent-Too
+- Core integration layer for +12 Monkeys
 - Enables plug-and-play service connections
 - Reduces development time by 70%
 
@@ -216,7 +216,7 @@ AI Agent ←→ MCP Client ←→ MCP Server ←→ External Service
 
 ---
 
-## 🎯 Recommendations for My-Agent-Too
+## 🎯 Recommendations for +12 Monkeys
 
 ### 1. Technology Choices
 

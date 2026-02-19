@@ -8,6 +8,7 @@ import {
   runMCPHealthCheck,
   storeMCPCredentials,
 } from "@/lib/api";
+import MonkeyIcon from "@/components/MonkeyIcon";
 
 /* ── Category metadata ── */
 const CATEGORY_META: Record<string, { label: string; icon: string }> = {
@@ -117,7 +118,11 @@ export default function MCPBrowser() {
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: "#1A1A1A" }}>
         <div className="flex items-center gap-3">
-          <a href="/" className="text-[#888] hover:text-[#ccc] transition text-sm">← Back</a>
+          <a href="/" className="flex items-center gap-2 text-[#888] hover:text-[#ccc] transition text-sm">
+            <MonkeyIcon size={22} />
+            <span className="font-semibold text-[#E8E8E8]"><span className="text-[#6C63FF]">+12</span> Monkeys</span>
+          </a>
+          <span className="text-[#333]">|</span>
           <h1 className="text-lg font-semibold">MCP Servers</h1>
           <span className="text-[12px] text-[#666] rounded-full px-2 py-0.5" style={{ background: "#1A1A1A" }}>
             {servers.length} servers
