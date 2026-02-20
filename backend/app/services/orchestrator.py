@@ -204,6 +204,14 @@ def _get_client() -> anthropic.AsyncAnthropic:
     return _async_client
 
 
+async def close_client() -> None:
+    """Close the shared Anthropic client. Call on app shutdown."""
+    global _async_client
+    if _async_client is not None:
+        await _async_client.close()
+        _async_client = None
+
+
 def _build_context_summary(session: WizardSession) -> str:
     """Build a dynamic context snapshot of gathered requirements."""
     r = session.requirements
