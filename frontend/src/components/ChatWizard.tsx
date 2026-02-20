@@ -278,10 +278,10 @@ export default function ChatWizard() {
       {/* ══════════ Top Header Bar ══════════ */}
       <header className="border-b" style={{ borderColor: "#1A1A1A" }}>
         <div className="flex items-center justify-between px-5 py-3">
-          {/* Left: brand icon + name */}
-          <div className="flex items-center gap-2">
-            <MonkeyIcon size={28} />
-            <span className="text-sm font-semibold tracking-tight text-[#E8E8E8]">
+          {/* Left: brand logo + name */}
+          <div className="flex items-center gap-3">
+            <MonkeyIcon size={36} />
+            <span className="text-base font-semibold tracking-tight text-[#E8E8E8]">
               <span className="text-[#6C63FF]">+12</span> Monkeys
             </span>
           </div>
