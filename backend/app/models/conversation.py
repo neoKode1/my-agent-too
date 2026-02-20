@@ -30,6 +30,8 @@ class FrameworkChoice(str, Enum):
     AUTOGEN = "autogen"
     SEMANTIC_KERNEL = "semantic-kernel"
     VERCEL_AI = "vercel-ai"
+    RIG = "rig"           # Rust — rig crate (async AI agent framework)
+    ADK_GO = "adk-go"     # Go — Google Agent Development Kit
 
 
 class DeploymentTarget(str, Enum):

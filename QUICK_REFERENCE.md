@@ -26,6 +26,8 @@
 | AutoGen | Multi-agent collab | Python |
 | Semantic Kernel | Enterprise | .NET/Python/Java |
 | Vercel AI SDK | TypeScript agents | TypeScript/Node.js |
+| Rig | High-perf / low-latency | Rust |
+| ADK-Go | Cloud-native concurrency | Go |
 
 ### 3. Market Trend: SaaS → AaaS
 - Salesforce Agentforce

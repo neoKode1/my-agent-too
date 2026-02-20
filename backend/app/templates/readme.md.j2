@@ -45,6 +45,24 @@ cp .env.example .env
 npm install
 npx tsx agent.ts
 ```
+{% elif framework == "rig" %}
+### Option 2: Local Rust
+
+```bash
+cp .env.example .env
+# Fill in your API keys in .env
+cargo build --release
+./target/release/{{ project_name | replace(' ', '-') | lower }}
+```
+{% elif framework == "adk-go" %}
+### Option 2: Local Go
+
+```bash
+cp .env.example .env
+# Fill in your API keys in .env
+go build -o agent .
+./agent
+```
 {% else %}
 ### Option 2: Local Python
 
@@ -76,6 +94,12 @@ python agent.py
 ├── agent.ts              # Main agent code (Vercel AI SDK)
 ├── package.json          # Node.js dependencies
 ├── tsconfig.json         # TypeScript configuration
+{% elif framework == "rig" %}
+├── src/main.rs           # Main agent code (Rig — Rust)
+├── Cargo.toml            # Rust dependencies
+{% elif framework == "adk-go" %}
+├── main.go               # Main agent code (ADK-Go)
+├── go.mod                # Go dependencies
 {% else %}
 ├── agent.py              # Main agent code ({{ framework }})
 ├── requirements.txt      # Python dependencies
@@ -88,6 +112,11 @@ python agent.py
 ├── railway.toml          # Railway deployment config
 ├── render.yaml           # Render deployment config
 ├── vercel.json           # Vercel deployment config
+├── k8s/                  # Kubernetes manifests
+│   ├── deployment.yaml
+│   └── service.yaml
+├── sam/                  # AWS SAM template
+│   └── template.yaml
 {% endif %}
 └── README.md             # This file
 ```

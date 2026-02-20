@@ -14,6 +14,16 @@
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1" }
   ],
+{% elif framework in ("rig", "adk-go") %}
+  "builds": [
+    {
+      "src": "Dockerfile",
+      "use": "@vercel/static-build"
+    }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "/" }
+  ],
 {% else %}
   "builds": [
     {

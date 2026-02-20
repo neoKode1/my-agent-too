@@ -20,10 +20,14 @@
 🔌 **MCP-Native** - Built on Model Context Protocol (Linux Foundation standard)
 🎨 **20 Agent Templates** - Customer service, research, data analysis, code gen, multi-agent teams, sales & lead gen, content creation, e-commerce, operations, healthcare, real estate, education, STEM lab sim, STEM coding tutor, grant writing, literature review, portfolio risk, compliance & fraud, mission planning, clinical decision support
 🚀 **Three Deployment Options** - LOCAL (docker compose), CLOUD (Railway/Render/Vercel), EXPORT (self-host)
-🔧 **Multi-Framework Support** - LangGraph, CrewAI, AutoGen, Semantic Kernel (Python) + Vercel AI SDK (TypeScript)
+🔧 **Multi-Framework Support** - LangGraph, CrewAI, AutoGen, Semantic Kernel (Python) + Vercel AI SDK (TypeScript) + Rig (Rust) + ADK-Go (Go)
 🐍 **Python Packages** - agent.py, requirements.txt, Dockerfile (Python 3.12), docker-compose.yml
 📘 **TypeScript Packages** - agent.ts, package.json, tsconfig.json, Dockerfile (Node 22), docker-compose.yml
+🦀 **Rust Packages** - src/main.rs, Cargo.toml, Dockerfile (multi-stage Rust 1.84), docker-compose.yml
+🐹 **Go Packages** - main.go, go.mod, Dockerfile (multi-stage Go 1.23 → distroless), docker-compose.yml
 ☁️ **Cloud Deploy Configs** - railway.toml, render.yaml, vercel.json (auto-generated for CLOUD/EXPORT)
+☸️ **Kubernetes Manifests** - k8s/deployment.yaml, k8s/service.yaml (auto-generated for CLOUD/EXPORT)
+⚡ **AWS SAM Templates** - sam/template.yaml with Lambda + API Gateway (auto-generated for CLOUD/EXPORT)
 📋 **Copy-to-Clipboard UI** - Easy code extraction with visual feedback
 ⚡ **30-Second Deployment** - From generation to running agent in half a minute
 
@@ -133,13 +137,40 @@ Every generated agent package includes **production-ready files** tailored to th
 | `mcp-config.json` | MCP server configuration |
 | `README.md` | Setup instructions for Docker and local development |
 
+### Rust Packages (Rig)
+
+| File | Description |
+|------|-------------|
+| `src/main.rs` | Async Rust agent using Rig crate with tokio runtime |
+| `Cargo.toml` | Rust dependencies (rig-core, tokio, serde, dotenv) |
+| `Dockerfile` | Multi-stage build: rust:1.84 builder → debian:bookworm-slim runtime |
+| `docker-compose.yml` | One-command deployment with env loading + port mapping |
+| `.env.example` | Environment variable template with all required keys |
+| `mcp-config.json` | MCP server configuration |
+| `README.md` | Setup instructions for Docker and local Rust development |
+
+### Go Packages (ADK-Go)
+
+| File | Description |
+|------|-------------|
+| `main.go` | Go agent using Google ADK-Go with goroutine pipeline |
+| `go.mod` | Go dependencies (google/adk-go, godotenv) |
+| `Dockerfile` | Multi-stage build: golang:1.23-alpine → distroless runtime |
+| `docker-compose.yml` | One-command deployment with env loading + port mapping |
+| `.env.example` | Environment variable template with all required keys |
+| `mcp-config.json` | MCP server configuration |
+| `README.md` | Setup instructions for Docker and local Go development |
+
 ### Cloud Deployment Configs (CLOUD / EXPORT targets)
 
 | File | Description |
 |------|-------------|
-| `railway.toml` | Railway deployment config (auto-detects Python/Node runtime) |
+| `railway.toml` | Railway deployment config (auto-detects Python/Node/Rust/Go runtime) |
 | `render.yaml` | Render Blueprint spec with health checks and env vars |
 | `vercel.json` | Vercel serverless config with function routes |
+| `k8s/deployment.yaml` | Kubernetes Deployment with replicas, resource limits, probes |
+| `k8s/service.yaml` | Kubernetes Service (ClusterIP) exposing port 80 → 8080 |
+| `sam/template.yaml` | AWS SAM template with Lambda function + API Gateway |
 
 ### 5. **.env.example** - Environment Variables Template
 - ✅ LLM API keys (ANTHROPIC_API_KEY)
@@ -193,15 +224,14 @@ Every generated agent package includes **production-ready files** tailored to th
 User Input → Conversational Wizard → Template Registry → Code Generator
                                                               ↓
                                                     Jinja2 Rendering Engine
-                                                         ↓              ↓
-                                              Python Package    TypeScript Package
-                                            (agent.py + pip)   (agent.ts + npm)
-                                                         ↓              ↓
-                                              Docker + Cloud Deploy Configs
-                                            (railway.toml / render.yaml / vercel.json)
-                                                              ↓
+                                              ↓          ↓          ↓          ↓
+                                          Python    TypeScript    Rust        Go
+                                        (pip)      (npm)       (cargo)    (go mod)
+                                                         ↓
+                                       Docker + Cloud Deploy Configs + K8s + SAM
+                                                         ↓
                                         Frontend UI (Copy/Download/Preview)
-                                                              ↓
+                                                         ↓
                                         User Deployment (LOCAL/CLOUD/EXPORT)
 ```
 
@@ -256,11 +286,16 @@ User Input → Conversational Wizard → Template Registry → Code Generator
 - CrewAI (teams)
 - AutoGen (collaboration)
 - Semantic Kernel (enterprise)
+- Vercel AI SDK (TypeScript)
+- Rig (Rust async agents)
+- ADK-Go (Go concurrent agents)
 
 **Infrastructure:**
 - Docker + Docker Compose
+- Kubernetes (Deployment + Service manifests)
+- AWS SAM / Lambda (serverless)
 - MongoDB (NANDA Index)
-- Railway/Render (cloud deployment)
+- Railway/Render/Vercel (cloud deployment)
 
 ---
 
@@ -515,32 +550,35 @@ docker compose up --build
 
 ## ✅ Current Status
 
-**Phase:** ✅ Foundation Complete + Tier 1 Multi-Language Expansion
+**Phase:** ✅ Foundation + Tier 1 + Tier 2 Multi-Language Expansion
 **Implemented:**
 - ✅ Conversational wizard with chat UI
 - ✅ Template registry with 20 built-in templates
 - ✅ Jinja2-based code generation pipeline
 - ✅ Python package generation (agent.py, requirements.txt, Dockerfile)
 - ✅ TypeScript package generation (agent.ts, package.json, tsconfig.json, Dockerfile)
-- ✅ Multi-framework support: LangGraph, CrewAI, AutoGen, Semantic Kernel (Python) + Vercel AI SDK (TypeScript)
+- ✅ Rust package generation (src/main.rs, Cargo.toml, multi-stage Dockerfile)
+- ✅ Go package generation (main.go, go.mod, multi-stage Dockerfile → distroless)
+- ✅ Multi-framework support: LangGraph, CrewAI, AutoGen, Semantic Kernel (Python) + Vercel AI SDK (TypeScript) + Rig (Rust) + ADK-Go (Go)
 - ✅ Cloud deployment configs: railway.toml, render.yaml, vercel.json
+- ✅ Kubernetes manifests: k8s/deployment.yaml, k8s/service.yaml
+- ✅ AWS SAM template: sam/template.yaml (Lambda + API Gateway)
 - ✅ Copy-to-clipboard UI with visual feedback
 - ✅ Download bundle functionality
 - ✅ In-browser code preview with syntax highlighting
 - ✅ LOCAL deployment support (docker compose)
-- ✅ CLOUD deployment support (Railway/Render/Vercel)
+- ✅ CLOUD deployment support (Railway/Render/Vercel/K8s/SAM)
 - ✅ EXPORT deployment support (self-host)
 - ✅ NANDA Index integration
 - ✅ MCP server auto-configuration
 
 **Next Steps:**
-1. Add Rust agent package (Cargo.toml, async agent with tokio)
-2. Add Go agent package (go.mod, goroutine pipeline)
-3. Add Kubernetes manifests (deployment.yaml, service.yaml)
-4. Add AWS Lambda/SAM deployment support
-5. Implement one-click cloud deployment
-6. Add agent monitoring and analytics
-7. Build agent marketplace
+1. Frontend chat UI scaffold (React/Next.js component)
+2. Monorepo structure (Turborepo/Nx layout)
+3. CI/CD pipelines (GitHub Actions)
+4. Implement one-click cloud deployment
+5. Add agent monitoring and analytics
+6. Build agent marketplace
 
 ---
 
@@ -557,6 +595,8 @@ docker compose up --build
 - [CrewAI Docs](https://docs.crewai.com/)
 - [AutoGen Docs](https://microsoft.github.io/autogen/)
 - [Semantic Kernel Docs](https://learn.microsoft.com/en-us/semantic-kernel/)
+- [Rig (Rust) Docs](https://docs.rs/rig-core/)
+- [ADK-Go Docs](https://google.github.io/adk-docs/)
 
 ---
 
@@ -645,6 +685,8 @@ MIT License
 - **LangChain Team** - For LangGraph
 - **CrewAI Team** - For CrewAI framework
 - **Microsoft** - For AutoGen and Semantic Kernel
+- **Rig Contributors** - For the Rust AI agent framework
+- **Google** - For ADK-Go (Agent Development Kit)
 - **NANDA Index** - For agent registry infrastructure
 
 ---

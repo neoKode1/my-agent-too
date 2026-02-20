@@ -8,6 +8,10 @@ services:
     runtime: docker
 {% if framework == "vercel-ai" %}
     dockerfilePath: Dockerfile_node
+{% elif framework == "rig" %}
+    dockerfilePath: Dockerfile_rust
+{% elif framework == "adk-go" %}
+    dockerfilePath: Dockerfile_go
 {% else %}
     dockerfilePath: Dockerfile
 {% endif %}

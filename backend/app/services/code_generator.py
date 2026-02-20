@@ -1,9 +1,14 @@
 """Code generation engine — renders agent templates into deployable packages.
 
-Uses Jinja2 templates to produce framework-specific Python or TypeScript code,
-Docker configs, cloud deployment configs, environment files, and setup
-instructions.  Supports Python frameworks (LangGraph, CrewAI, AutoGen,
-Semantic Kernel) and TypeScript frameworks (Vercel AI SDK).
+Uses Jinja2 templates to produce framework-specific code in Python, TypeScript,
+Rust, or Go, plus Docker configs, Kubernetes manifests, AWS SAM templates,
+cloud deployment configs, environment files, and setup instructions.
+
+Supported languages / frameworks:
+  Python     — LangGraph, CrewAI, AutoGen, Semantic Kernel
+  TypeScript — Vercel AI SDK
+  Rust       — Rig (async AI agent framework)
+  Go         — Google ADK-Go
 """
 
 import logging
@@ -75,8 +80,12 @@ def _collect_env_vars(servers: List[MCPServerConfig]) -> List[str]:
     return env_vars
 
 
-# Frameworks that produce TypeScript instead of Python
+# ---------------------------------------------------------------------------
+# Language detection helpers
+# ---------------------------------------------------------------------------
 _TS_FRAMEWORKS = {FrameworkChoice.VERCEL_AI}
+_RS_FRAMEWORKS = {FrameworkChoice.RIG}
+_GO_FRAMEWORKS = {FrameworkChoice.ADK_GO}
 
 
 def _is_typescript(framework: FrameworkChoice) -> bool:
@@ -84,16 +93,32 @@ def _is_typescript(framework: FrameworkChoice) -> bool:
     return framework in _TS_FRAMEWORKS
 
 
+def _is_rust(framework: FrameworkChoice) -> bool:
+    """Return True if the framework targets Rust."""
+    return framework in _RS_FRAMEWORKS
+
+
+def _is_go(framework: FrameworkChoice) -> bool:
+    """Return True if the framework targets Go."""
+    return framework in _GO_FRAMEWORKS
+
+
 def _generate_agent_code(
     template: AgentTemplate,
     ctx: Dict[str, Any],
     files: List[GeneratedFile],
 ) -> None:
-    """Generate the main agent source file (Python or TypeScript)."""
+    """Generate the main agent source file (Python, TypeScript, Rust, or Go)."""
     fw = template.framework
     if _is_typescript(fw):
         tmpl_name = f"{fw.value.replace('-', '_')}_agent.ts.j2"
         out_path, lang = "agent.ts", "typescript"
+    elif _is_rust(fw):
+        tmpl_name = f"{fw.value.replace('-', '_')}_agent.rs.j2"
+        out_path, lang = "src/main.rs", "rust"
+    elif _is_go(fw):
+        tmpl_name = f"{fw.value.replace('-', '_')}_agent.go.j2"
+        out_path, lang = "main.go", "go"
     else:
         tmpl_name = f"{fw.value.replace('-', '_')}_agent.py.j2"
         out_path, lang = "agent.py", "python"
@@ -109,8 +134,9 @@ def _generate_deps(
     ctx: Dict[str, Any],
     files: List[GeneratedFile],
 ) -> None:
-    """Generate dependency manifest (requirements.txt or package.json + tsconfig)."""
-    if _is_typescript(template.framework):
+    """Generate dependency manifest (requirements.txt / package.json / Cargo.toml / go.mod)."""
+    fw = template.framework
+    if _is_typescript(fw):
         files.append(GeneratedFile(
             path="package.json",
             content=_render("package_json.j2", ctx),
@@ -120,6 +146,18 @@ def _generate_deps(
             path="tsconfig.json",
             content=_render("tsconfig_json.j2", ctx),
             language="json",
+        ))
+    elif _is_rust(fw):
+        files.append(GeneratedFile(
+            path="Cargo.toml",
+            content=_render("cargo_toml.j2", ctx),
+            language="toml",
+        ))
+    elif _is_go(fw):
+        files.append(GeneratedFile(
+            path="go.mod",
+            content=_render("go_mod.j2", ctx),
+            language="text",
         ))
     else:
         files.append(GeneratedFile(
@@ -134,9 +172,14 @@ def _generate_docker(
     ctx: Dict[str, Any],
     files: List[GeneratedFile],
 ) -> None:
-    """Generate Dockerfile + docker-compose.yml (Python or Node variant)."""
-    if _is_typescript(template.framework):
+    """Generate Dockerfile + docker-compose.yml (Python / Node / Rust / Go variant)."""
+    fw = template.framework
+    if _is_typescript(fw):
         dockerfile_tmpl = "Dockerfile_node.j2"
+    elif _is_rust(fw):
+        dockerfile_tmpl = "Dockerfile_rust.j2"
+    elif _is_go(fw):
+        dockerfile_tmpl = "Dockerfile_go.j2"
     else:
         dockerfile_tmpl = "Dockerfile.j2"
     files.append(GeneratedFile(
@@ -184,13 +227,61 @@ def _generate_deploy_configs(
             logger.warning("Could not render vercel.json: %s", exc)
 
 
+def _generate_k8s_manifests(
+    deployment: DeploymentTarget,
+    ctx: Dict[str, Any],
+    files: List[GeneratedFile],
+) -> None:
+    """Generate Kubernetes manifests when deployment is CLOUD or EXPORT."""
+    if deployment in (DeploymentTarget.CLOUD, DeploymentTarget.EXPORT):
+        try:
+            files.append(GeneratedFile(
+                path="k8s/deployment.yaml",
+                content=_render("k8s_deployment.yaml.j2", ctx),
+                language="yaml",
+            ))
+            files.append(GeneratedFile(
+                path="k8s/service.yaml",
+                content=_render("k8s_service.yaml.j2", ctx),
+                language="yaml",
+            ))
+        except Exception as exc:
+            logger.warning("Could not render K8s manifests: %s", exc)
+
+
+def _generate_sam_template(
+    deployment: DeploymentTarget,
+    ctx: Dict[str, Any],
+    files: List[GeneratedFile],
+) -> None:
+    """Generate AWS SAM template when deployment is CLOUD or EXPORT."""
+    if deployment in (DeploymentTarget.CLOUD, DeploymentTarget.EXPORT):
+        try:
+            files.append(GeneratedFile(
+                path="sam/template.yaml",
+                content=_render("sam_template.yaml.j2", ctx),
+                language="yaml",
+            ))
+        except Exception as exc:
+            logger.warning("Could not render SAM template: %s", exc)
+
+
+# ---------------------------------------------------------------------------
+# Language label helpers
+# ---------------------------------------------------------------------------
+_LANG_LABELS = {
+    FrameworkChoice.VERCEL_AI: "TypeScript (Vercel AI SDK)",
+    FrameworkChoice.RIG: "Rust (Rig)",
+    FrameworkChoice.ADK_GO: "Go (ADK-Go)",
+}
+
+
 def generate_package(req: GenerateRequest) -> GeneratedPackage:
     """Generate a full agent package from a template + configuration.
 
     Returns a GeneratedPackage with all files ready to download or deploy.
-    Generates Python packages for LangGraph/CrewAI/AutoGen/Semantic Kernel,
-    and TypeScript packages for Vercel AI SDK.  Cloud deployments include
-    Railway, Render, and Vercel configs.
+    Supports Python, TypeScript, Rust, and Go frameworks.  Cloud/Export
+    deployments include Railway, Render, Vercel, Kubernetes, and AWS SAM configs.
     """
     template = get_template(req.template_id)
     if not template:
@@ -198,12 +289,12 @@ def generate_package(req: GenerateRequest) -> GeneratedPackage:
 
     ctx = _build_context(template, req)
     files: List[GeneratedFile] = []
-    is_ts = _is_typescript(template.framework)
+    fw = template.framework
 
-    # 1. Main agent code — framework-specific (Python or TypeScript)
+    # 1. Main agent code — framework-specific (Python / TypeScript / Rust / Go)
     _generate_agent_code(template, ctx, files)
 
-    # 2. Dependencies (requirements.txt or package.json + tsconfig.json)
+    # 2. Dependencies (requirements.txt / package.json / Cargo.toml / go.mod)
     _generate_deps(template, ctx, files)
 
     # 3. Dockerfile + docker-compose.yml
@@ -226,7 +317,13 @@ def generate_package(req: GenerateRequest) -> GeneratedPackage:
     # 6. Cloud deployment configs (Railway, Render, Vercel) — when not LOCAL
     _generate_deploy_configs(req.deployment, ctx, files)
 
-    # 7. README
+    # 7. Kubernetes manifests — when CLOUD or EXPORT
+    _generate_k8s_manifests(req.deployment, ctx, files)
+
+    # 8. AWS SAM template — when CLOUD or EXPORT
+    _generate_sam_template(req.deployment, ctx, files)
+
+    # 9. README
     files.append(GeneratedFile(
         path="README.md",
         content=_render("readme.md.j2", ctx),
@@ -234,12 +331,26 @@ def generate_package(req: GenerateRequest) -> GeneratedPackage:
     ))
 
     # Build setup instructions — language-aware
-    if is_ts:
+    if _is_typescript(fw):
         setup = [
             "cp .env.example .env",
             "Fill in the required environment variables in .env",
             "npm install",
             "npx tsx agent.ts",
+        ]
+    elif _is_rust(fw):
+        setup = [
+            "cp .env.example .env",
+            "Fill in the required environment variables in .env",
+            "cargo build --release",
+            "./target/release/$(basename $PWD)",
+        ]
+    elif _is_go(fw):
+        setup = [
+            "cp .env.example .env",
+            "Fill in the required environment variables in .env",
+            "go build -o agent .",
+            "./agent",
         ]
     else:
         setup = [
@@ -251,7 +362,7 @@ def generate_package(req: GenerateRequest) -> GeneratedPackage:
     if req.deployment == DeploymentTarget.LOCAL:
         setup = ["docker compose up --build"] + setup
 
-    lang_label = "TypeScript (Vercel AI SDK)" if is_ts else template.framework.value
+    lang_label = _LANG_LABELS.get(fw, template.framework.value)
     return GeneratedPackage(
         project_name=req.project_name,
         template_id=req.template_id,

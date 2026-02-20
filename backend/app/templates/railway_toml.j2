@@ -6,6 +6,9 @@
 {% if framework == "vercel-ai" %}
 builder = "nixpacks"
 nixpacksPlan.providers = ["node"]
+{% elif framework in ("rig", "adk-go") %}
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
 {% else %}
 builder = "dockerfile"
 dockerfilePath = "Dockerfile"
@@ -14,6 +17,10 @@ dockerfilePath = "Dockerfile"
 [deploy]
 {% if framework == "vercel-ai" %}
 startCommand = "npx tsx agent.ts"
+{% elif framework == "rig" %}
+startCommand = "./agent"
+{% elif framework == "adk-go" %}
+startCommand = "./agent"
 {% else %}
 startCommand = "python agent.py"
 {% endif %}

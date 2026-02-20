@@ -133,6 +133,20 @@ _USECASE_FRAMEWORK: Dict[str, FrameworkChoice] = {
     "javascript": FrameworkChoice.VERCEL_AI,
     "frontend": FrameworkChoice.VERCEL_AI,
     "react": FrameworkChoice.VERCEL_AI,
+    # Rust / Rig targets
+    "rust": FrameworkChoice.RIG,
+    "rig": FrameworkChoice.RIG,
+    "cargo": FrameworkChoice.RIG,
+    "tokio": FrameworkChoice.RIG,
+    "systems programming": FrameworkChoice.RIG,
+    "low-latency": FrameworkChoice.RIG,
+    # Go / ADK-Go targets
+    "go": FrameworkChoice.ADK_GO,
+    "golang": FrameworkChoice.ADK_GO,
+    "adk": FrameworkChoice.ADK_GO,
+    "google adk": FrameworkChoice.ADK_GO,
+    "concurrency": FrameworkChoice.ADK_GO,
+    "goroutine": FrameworkChoice.ADK_GO,
 }
 
 _FRAMEWORK_REASONS: Dict[FrameworkChoice, str] = {
@@ -141,6 +155,8 @@ _FRAMEWORK_REASONS: Dict[FrameworkChoice, str] = {
     FrameworkChoice.AUTOGEN: "AutoGen's group-chat paradigm is purpose-built for multi-agent collaboration where agents need to negotiate and iterate together.",
     FrameworkChoice.SEMANTIC_KERNEL: "Semantic Kernel offers enterprise-grade plugin architecture with strong .NET/Java interop — suited for large-scale enterprise integration.",
     FrameworkChoice.VERCEL_AI: "Vercel AI SDK provides a TypeScript-native agent framework with streaming, tool calling, and seamless Vercel/Next.js deployment — ideal for JavaScript/TypeScript developers.",
+    FrameworkChoice.RIG: "Rig is Rust's leading async AI agent framework — perfect for high-performance, low-latency workloads where memory safety and zero-cost abstractions matter.",
+    FrameworkChoice.ADK_GO: "Google ADK-Go brings Go's concurrency model (goroutines) to AI agents — ideal for scalable, cloud-native services that need strong typing and fast compilation.",
 }
 
 
@@ -217,6 +233,16 @@ def build_recommendation(reqs: ExtractedRequirements) -> Recommendation:
         agents = [
             {"role": "planner", "goal": "Break down tasks into actionable steps"},
             {"role": "executor", "goal": "Execute each step and return results"},
+        ]
+    elif framework == FrameworkChoice.RIG:
+        agents = [
+            {"role": "planner", "goal": "Decompose tasks into async pipeline stages"},
+            {"role": "executor", "goal": "Execute each stage with zero-copy efficiency"},
+        ]
+    elif framework == FrameworkChoice.ADK_GO:
+        agents = [
+            {"role": "planner", "goal": "Divide work into concurrent goroutine tasks"},
+            {"role": "executor", "goal": "Execute tasks in parallel and merge results"},
         ]
     else:  # langgraph / semantic-kernel
         agents = [
