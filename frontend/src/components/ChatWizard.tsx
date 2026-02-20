@@ -327,21 +327,21 @@ export default function ChatWizard() {
     <div className="flex h-screen flex-col" style={{ background: "#0D0D0D", color: "#E8E8E8" }}>
 
       {/* ══════════ Top Header Bar ══════════ */}
-      <header className="border-b" style={{ borderColor: "#1A1A1A" }}>
-        <div className="flex items-center justify-between px-5 py-3">
+      <header className="border-b shrink-0" style={{ borderColor: "#1A1A1A" }}>
+        <div className="flex items-center justify-between px-3 sm:px-5 py-2 sm:py-3">
           {/* Left: brand logo */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             <Image
               src="/favicon-monkey.png"
               alt="+12 Monkeys"
               width={36}
               height={36}
-              className="h-9 w-9 brightness-0 invert"
+              className="h-7 w-7 sm:h-9 sm:w-9 brightness-0 invert shrink-0"
             />
             <span
-              className="text-white uppercase"
+              className="text-white uppercase truncate"
               style={{
-                fontSize: "24px",
+                fontSize: "clamp(16px, 4vw, 24px)",
                 fontFamily: "var(--font-brand), 'Barlow Condensed', sans-serif",
                 fontWeight: 300,
                 letterSpacing: "0.16em",
@@ -352,32 +352,41 @@ export default function ChatWizard() {
             </span>
           </div>
 
-          {/* Center: stepper (moved here for balance) */}
-          <ProgressStepper status={status} />
-
-          {/* Right: actions */}
-          <div className="flex items-center gap-1">
-            <a href="/mcp" className="px-2.5 py-1 rounded-lg text-[12px] font-medium text-[#6C63FF] hover:bg-[#6C63FF]/10 transition">
-              MCP Servers
-            </a>
-            {[IconDownload, IconBookmark, IconHistory, IconEdit].map((Icon, i) => (
-              <button key={i} className="p-1.5 rounded-lg transition hover:bg-white/10 text-[#888]">
-                <Icon />
-              </button>
-            ))}
+          {/* Center: stepper — hidden on mobile */}
+          <div className="hidden md:block">
+            <ProgressStepper status={status} />
           </div>
+
+          {/* Right: actions — collapsed on mobile */}
+          <div className="flex items-center gap-1 shrink-0">
+            <a href="/mcp" className="px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-[12px] font-medium text-[#6C63FF] hover:bg-[#6C63FF]/10 transition">
+              MCP
+            </a>
+            {/* Desktop-only action buttons */}
+            <div className="hidden sm:flex items-center gap-1">
+              {[IconDownload, IconBookmark, IconHistory, IconEdit].map((Icon, i) => (
+                <button key={i} className="p-1.5 rounded-lg transition hover:bg-white/10 text-[#888]">
+                  <Icon />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        {/* Mobile-only stepper — compact below header */}
+        <div className="md:hidden border-t" style={{ borderColor: "#1A1A1A" }}>
+          <ProgressStepper status={status} />
         </div>
       </header>
 
-      {/* ══════════ Messages ══════════ */}
-      <div className="flex-1 overflow-y-auto flex flex-col justify-center">
-        <div className="max-w-3xl mx-auto px-6 py-6 space-y-6 w-full">
+      {/* ══════════ Messages (scrollable area) ══════════ */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="max-w-3xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 w-full">
           {messages.map((m, i) => (
             <div key={i} className="msg-enter">
               {m.role === "user" ? (
                 /* ── User bubble ── */
                 <div className="flex justify-end">
-                  <div className="max-w-[80%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed"
+                  <div className="max-w-[85%] sm:max-w-[80%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed"
                     style={{ background: "#1A1A1A", color: "#E8E8E8" }}>
                     {m.content}
                   </div>
@@ -457,34 +466,6 @@ export default function ChatWizard() {
               )}
             </div>
           )}
-          {/* ══════════ Input Box (inside message flow) ══════════ */}
-          <div className="pt-4">
-            <form
-              onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-              className="flex items-center gap-2 rounded-2xl px-4 py-2"
-              style={{ background: "#1A1A1A", border: "1px solid #2A2A2A" }}
-            >
-              <button type="button" className="p-1.5 rounded-lg text-[#555] hover:text-[#aaa] transition hover:bg-white/5">
-                <IconAttach />
-              </button>
-              <input
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask anything"
-                className="flex-1 bg-transparent text-[14px] text-[#E8E8E8] placeholder-[#555] outline-none py-2"
-                disabled={loading || status === "complete"}
-              />
-              <button
-                type="submit"
-                disabled={loading || !input.trim() || status === "complete"}
-                className="p-2 rounded-full transition disabled:opacity-30"
-                style={{ background: input.trim() ? "#6C63FF" : "#333" }}
-              >
-                <IconSend />
-              </button>
-            </form>
-          </div>
 
           <div ref={bottomRef} />
         </div>
@@ -510,6 +491,35 @@ export default function ChatWizard() {
           onSelectFile={setPreviewFile}
         />
       )}
+
+      {/* ══════════ Input Bar — pinned to bottom ══════════ */}
+      <div className="shrink-0 border-t px-3 sm:px-6 py-2 sm:py-3" style={{ borderColor: "#1A1A1A", background: "#0D0D0D" }}>
+        <form
+          onSubmit={(e) => { e.preventDefault(); handleSend(); }}
+          className="max-w-3xl mx-auto flex items-center gap-2 rounded-2xl px-3 sm:px-4 py-2"
+          style={{ background: "#1A1A1A", border: "1px solid #2A2A2A" }}
+        >
+          <button type="button" className="p-1.5 rounded-lg text-[#555] hover:text-[#aaa] transition hover:bg-white/5 shrink-0">
+            <IconAttach />
+          </button>
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask anything"
+            className="flex-1 min-w-0 bg-transparent text-[14px] text-[#E8E8E8] placeholder-[#555] outline-none py-2"
+            disabled={loading || status === "complete"}
+          />
+          <button
+            type="submit"
+            disabled={loading || !input.trim() || status === "complete"}
+            className="p-2 rounded-full transition disabled:opacity-30 shrink-0"
+            style={{ background: input.trim() ? "#6C63FF" : "#333" }}
+          >
+            <IconSend />
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
@@ -569,8 +579,8 @@ function RecommendationPanel({
       : [isDeveloper ? "None" : "No extra services needed"];
 
   return (
-    <div className="border-t px-4 py-4" style={{ borderColor: "#1A1A1A", background: "#111111" }}>
-      <div className="max-w-3xl mx-auto space-y-4">
+    <div className="border-t px-3 sm:px-4 py-3 sm:py-4 shrink-0 overflow-y-auto max-h-[50vh] sm:max-h-[40vh]" style={{ borderColor: "#1A1A1A", background: "#111111" }}>
+      <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4">
         <div className="flex items-center gap-2">
           <span className="text-lg">✨</span>
           <h2 className="text-sm font-semibold text-[#34D399]">
@@ -579,7 +589,7 @@ function RecommendationPanel({
         </div>
         <p className="text-[13px] text-[#B0B0B0] leading-relaxed">{rec.summary}</p>
 
-        <div className="grid grid-cols-2 gap-3 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs">
           {/* Framework card — developers only */}
           {isDeveloper && (
             <div className="rounded-xl p-3" style={{ background: "#1A1A1A", border: "1px solid #2A2A2A" }}>
@@ -622,12 +632,12 @@ function RecommendationPanel({
           )}
         </div>
 
-        <div className="flex items-center gap-3 pt-1">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 pt-1">
           <input
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
             placeholder={isDeveloper ? "Project name" : "Name your assistant"}
-            className="rounded-xl px-3 py-2 text-sm text-[#E8E8E8] outline-none transition"
+            className="rounded-xl px-3 py-2 text-sm text-[#E8E8E8] outline-none transition w-full sm:w-auto"
             style={{ background: "#1A1A1A", border: "1px solid #2A2A2A" }}
             onFocus={(e) => (e.target.style.borderColor = "#6C63FF")}
             onBlur={(e) => (e.target.style.borderColor = "#2A2A2A")}
@@ -635,7 +645,7 @@ function RecommendationPanel({
           <button
             onClick={onGenerate}
             disabled={generating}
-            className="rounded-xl px-5 py-2 text-sm font-medium text-white transition disabled:opacity-40"
+            className="rounded-xl px-5 py-2 text-sm font-medium text-white transition disabled:opacity-40 whitespace-nowrap"
             style={{ background: "#6C63FF" }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "#7B73FF")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "#6C63FF")}
@@ -658,14 +668,14 @@ function PackagePreview({
   onSelectFile: (f: GeneratedFile) => void;
 }) {
   return (
-    <div className="border-t flex flex-col" style={{ maxHeight: "45vh", borderColor: "#1A1A1A", background: "#111111" }}>
+    <div className="border-t flex flex-col shrink-0" style={{ maxHeight: "50vh", borderColor: "#1A1A1A", background: "#111111" }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: "#1A1A1A" }}>
-        <div>
-          <h2 className="text-sm font-semibold text-[#6C63FF]">
+      <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 border-b" style={{ borderColor: "#1A1A1A" }}>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-sm font-semibold text-[#6C63FF] truncate">
             📦 {pkg.project_name}
           </h2>
-          <p className="text-[11px] text-[#666] mt-0.5">{pkg.summary}</p>
+          <p className="text-[11px] text-[#666] mt-0.5 truncate">{pkg.summary}</p>
         </div>
         <button
           onClick={async () => {
@@ -681,24 +691,24 @@ function PackagePreview({
             a.click();
             URL.revokeObjectURL(url);
           }}
-          className="rounded-lg px-3 py-1.5 text-xs text-[#ccc] transition"
+          className="rounded-lg px-3 py-1.5 text-xs text-[#ccc] transition shrink-0 ml-2"
           style={{ background: "#1A1A1A", border: "1px solid #2A2A2A" }}
           onMouseEnter={(e) => (e.currentTarget.style.background = "#242424")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "#1A1A1A")}
         >
-          ⬇ Download All
+          ⬇ Download
         </button>
       </div>
 
-      {/* File tabs + preview */}
-      <div className="flex flex-1 min-h-0">
-        {/* File list sidebar */}
-        <div className="w-48 border-r overflow-y-auto py-2" style={{ borderColor: "#1A1A1A" }}>
+      {/* File tabs (horizontal scroll on mobile, sidebar on desktop) + preview */}
+      <div className="flex flex-col sm:flex-row flex-1 min-h-0">
+        {/* File list — horizontal scroll on mobile, sidebar on desktop */}
+        <div className="sm:w-48 border-b sm:border-b-0 sm:border-r overflow-x-auto sm:overflow-x-visible overflow-y-hidden sm:overflow-y-auto py-1 sm:py-2 flex sm:block shrink-0" style={{ borderColor: "#1A1A1A" }}>
           {pkg.files.map((f) => (
             <button
               key={f.path}
               onClick={() => onSelectFile(f)}
-              className={`w-full text-left px-4 py-1.5 text-xs transition ${
+              className={`whitespace-nowrap sm:whitespace-normal sm:w-full text-left px-3 sm:px-4 py-1.5 text-xs transition shrink-0 ${
                 previewFile?.path === f.path
                   ? "text-[#6C63FF]"
                   : "text-[#666] hover:text-[#aaa]"
@@ -711,13 +721,13 @@ function PackagePreview({
         </div>
 
         {/* Code preview */}
-        <div className="flex-1 overflow-auto" style={{ background: "#0D0D0D" }}>
+        <div className="flex-1 overflow-auto min-h-0" style={{ background: "#0D0D0D" }}>
           {previewFile ? (
-            <pre className="p-4 text-xs leading-relaxed font-mono whitespace-pre" style={{ color: "#B0B0B0" }}>
+            <pre className="p-3 sm:p-4 text-xs leading-relaxed font-mono whitespace-pre overflow-x-auto" style={{ color: "#B0B0B0" }}>
               {previewFile.content}
             </pre>
           ) : (
-            <div className="flex items-center justify-center h-full text-[#444] text-sm">
+            <div className="flex items-center justify-center h-full text-[#444] text-sm py-8">
               Select a file to preview
             </div>
           )}

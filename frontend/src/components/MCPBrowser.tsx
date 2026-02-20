@@ -118,49 +118,51 @@ export default function MCPBrowser() {
   return (
     <div className="flex h-screen flex-col" style={{ background: "#0D0D0D", color: "#E8E8E8" }}>
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: "#1A1A1A" }}>
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition">
-            <Image
-              src="/favicon-monkey.png"
-              alt="+12 Monkeys"
-              width={32}
-              height={32}
-              className="h-8 w-8 brightness-0 invert"
-            />
-            <span
-              className="text-white uppercase"
-              style={{
-                fontSize: "22px",
-                fontFamily: "var(--font-brand), 'Barlow Condensed', sans-serif",
-                fontWeight: 300,
-                letterSpacing: "0.16em",
-                lineHeight: 1,
-              }}
-            >
-              +12 Monkeys
+      <header className="shrink-0 border-b" style={{ borderColor: "#1A1A1A" }}>
+        <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-4">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <Link href="/" className="flex items-center gap-2 sm:gap-2.5 hover:opacity-80 transition shrink-0">
+              <Image
+                src="/favicon-monkey.png"
+                alt="+12 Monkeys"
+                width={32}
+                height={32}
+                className="h-6 w-6 sm:h-8 sm:w-8 brightness-0 invert"
+              />
+              <span
+                className="text-white uppercase"
+                style={{
+                  fontSize: "clamp(16px, 4vw, 22px)",
+                  fontFamily: "var(--font-brand), 'Barlow Condensed', sans-serif",
+                  fontWeight: 300,
+                  letterSpacing: "0.16em",
+                  lineHeight: 1,
+                }}
+              >
+                +12 Monkeys
+              </span>
+            </Link>
+            <span className="text-[#333] hidden sm:inline">|</span>
+            <h1 className="text-sm sm:text-lg font-semibold truncate">MCP Servers</h1>
+            <span className="text-[11px] sm:text-[12px] text-[#666] rounded-full px-2 py-0.5 hidden sm:inline-block" style={{ background: "#1A1A1A" }}>
+              {servers.length} servers
             </span>
-          </Link>
-          <span className="text-[#333]">|</span>
-          <h1 className="text-lg font-semibold">MCP Servers</h1>
-          <span className="text-[12px] text-[#666] rounded-full px-2 py-0.5" style={{ background: "#1A1A1A" }}>
-            {servers.length} servers
-          </span>
-        </div>
-        {/* Search */}
-        <div className="flex items-center gap-2">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search servers…"
-            className="rounded-xl px-3 py-1.5 text-[13px] text-[#E8E8E8] placeholder-[#555] outline-none w-56"
-            style={{ background: "#1A1A1A", border: "1px solid #2A2A2A" }}
-          />
+          </div>
+          {/* Search */}
+          <div className="flex items-center gap-2 shrink-0 ml-2">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search…"
+              className="rounded-xl px-3 py-1.5 text-[13px] text-[#E8E8E8] placeholder-[#555] outline-none w-32 sm:w-56"
+              style={{ background: "#1A1A1A", border: "1px solid #2A2A2A" }}
+            />
+          </div>
         </div>
       </header>
 
       {/* Category pills */}
-      <div className="flex items-center gap-2 px-6 py-3 overflow-x-auto" style={{ borderBottom: "1px solid #1A1A1A" }}>
+      <div className="flex items-center gap-2 px-3 sm:px-6 py-2 sm:py-3 overflow-x-auto shrink-0" style={{ borderBottom: "1px solid #1A1A1A" }}>
         <button
           onClick={() => setActiveCategory(null)}
           className="px-3 py-1 rounded-full text-[12px] font-medium transition whitespace-nowrap"
@@ -188,9 +190,9 @@ export default function MCPBrowser() {
       </div>
 
       {/* Main content */}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 relative">
         {/* ══ Server Grid ══ */}
-        <div className={`${selected ? "w-1/2" : "w-full"} overflow-y-auto p-6 transition-all`}>
+        <div className={`${selected ? "hidden md:block md:w-1/2" : "w-full"} overflow-y-auto p-3 sm:p-6 transition-all`}>
           {loading ? (
             <div className="flex items-center justify-center h-40 text-[#555]">Loading servers…</div>
           ) : servers.length === 0 ? (
@@ -201,18 +203,18 @@ export default function MCPBrowser() {
                 <button
                   key={s.id}
                   onClick={() => handleSelect(s)}
-                  className="text-left rounded-xl p-4 transition group"
+                  className="text-left rounded-xl p-3 sm:p-4 transition group"
                   style={{
                     background: selected?.id === s.id ? "#1E1E2E" : "#111",
                     border: `1px solid ${selected?.id === s.id ? "#6C63FF" : "#1A1A1A"}`,
                   }}
                 >
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{s.icon || "📦"}</span>
-                      <div>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xl shrink-0">{s.icon || "📦"}</span>
+                      <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-[14px] font-medium text-[#E8E8E8] group-hover:text-white transition">{s.name}</span>
+                          <span className="text-[14px] font-medium text-[#E8E8E8] group-hover:text-white transition truncate">{s.name}</span>
                           <StatusDot status={s.status} />
                         </div>
                         <span className="text-[11px] text-[#555] uppercase tracking-wide">
@@ -221,7 +223,7 @@ export default function MCPBrowser() {
                       </div>
                     </div>
                     {s.is_official && (
-                      <span className="text-[10px] text-[#6C63FF] px-1.5 py-0.5 rounded" style={{ background: "rgba(108,99,255,0.1)" }}>
+                      <span className="text-[10px] text-[#6C63FF] px-1.5 py-0.5 rounded shrink-0" style={{ background: "rgba(108,99,255,0.1)" }}>
                         Official
                       </span>
                     )}
@@ -245,20 +247,24 @@ export default function MCPBrowser() {
           )}
         </div>
 
-        {/* ══ Detail Panel ══ */}
+        {/* ══ Detail Panel — overlay on mobile, sidebar on desktop ══ */}
         {selected && (
-          <div className="w-1/2 border-l overflow-y-auto" style={{ borderColor: "#1A1A1A", background: "#0A0A0A" }}>
-            <div className="p-6 space-y-5">
+          <div className="fixed inset-0 z-50 md:relative md:inset-auto md:z-auto md:w-1/2 md:border-l flex flex-col" style={{ borderColor: "#1A1A1A" }}>
+            {/* Mobile backdrop */}
+            <div className="absolute inset-0 bg-black/60 md:hidden" onClick={() => setSelected(null)} />
+            {/* Panel content */}
+            <div className="relative flex-1 overflow-y-auto mt-12 md:mt-0 rounded-t-2xl md:rounded-none" style={{ background: "#0A0A0A" }}>
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
               {/* Close + title */}
               <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">{selected.icon || "📦"}</span>
-                  <div>
-                    <h2 className="text-lg font-semibold text-white">{selected.name}</h2>
-                    <span className="text-[12px] text-[#555]">{selected.id} · {CATEGORY_META[selected.category]?.label || selected.category}</span>
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <span className="text-2xl sm:text-3xl shrink-0">{selected.icon || "📦"}</span>
+                  <div className="min-w-0">
+                    <h2 className="text-base sm:text-lg font-semibold text-white truncate">{selected.name}</h2>
+                    <span className="text-[11px] sm:text-[12px] text-[#555] truncate block">{selected.id} · {CATEGORY_META[selected.category]?.label || selected.category}</span>
                   </div>
                 </div>
-                <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg text-[#555] hover:text-[#aaa] hover:bg-white/5 transition">
+                <button onClick={() => setSelected(null)} className="p-2 sm:p-1.5 rounded-lg text-[#555] hover:text-[#aaa] hover:bg-white/5 transition shrink-0">
                   ✕
                 </button>
               </div>
@@ -375,10 +381,11 @@ export default function MCPBrowser() {
               {/* Command preview */}
               <div className="rounded-xl p-4 space-y-2" style={{ background: "#111", border: "1px solid #1A1A1A" }}>
                 <h3 className="text-[13px] font-semibold text-[#ccc]">Start Command</h3>
-                <pre className="text-[12px] font-mono text-[#888] whitespace-pre-wrap">
+                <pre className="text-[12px] font-mono text-[#888] whitespace-pre-wrap break-all">
                   {selected.command} {selected.args.join(" ")}
                 </pre>
               </div>
+            </div>
             </div>
           </div>
         )}
