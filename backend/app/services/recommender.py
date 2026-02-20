@@ -124,6 +124,15 @@ _USECASE_FRAMEWORK: Dict[str, FrameworkChoice] = {
     "multi-agent": FrameworkChoice.AUTOGEN,
     "collaboration": FrameworkChoice.AUTOGEN,
     "automation": FrameworkChoice.LANGGRAPH,
+    # TypeScript / Vercel AI SDK targets
+    "typescript": FrameworkChoice.VERCEL_AI,
+    "nextjs": FrameworkChoice.VERCEL_AI,
+    "next.js": FrameworkChoice.VERCEL_AI,
+    "vercel": FrameworkChoice.VERCEL_AI,
+    "node": FrameworkChoice.VERCEL_AI,
+    "javascript": FrameworkChoice.VERCEL_AI,
+    "frontend": FrameworkChoice.VERCEL_AI,
+    "react": FrameworkChoice.VERCEL_AI,
 }
 
 _FRAMEWORK_REASONS: Dict[FrameworkChoice, str] = {
@@ -131,6 +140,7 @@ _FRAMEWORK_REASONS: Dict[FrameworkChoice, str] = {
     FrameworkChoice.LANGGRAPH: "LangGraph provides fine-grained control over complex state machines and iterative workflows — great for research, analysis, and code generation.",
     FrameworkChoice.AUTOGEN: "AutoGen's group-chat paradigm is purpose-built for multi-agent collaboration where agents need to negotiate and iterate together.",
     FrameworkChoice.SEMANTIC_KERNEL: "Semantic Kernel offers enterprise-grade plugin architecture with strong .NET/Java interop — suited for large-scale enterprise integration.",
+    FrameworkChoice.VERCEL_AI: "Vercel AI SDK provides a TypeScript-native agent framework with streaming, tool calling, and seamless Vercel/Next.js deployment — ideal for JavaScript/TypeScript developers.",
 }
 
 
@@ -202,6 +212,11 @@ def build_recommendation(reqs: ExtractedRequirements) -> Recommendation:
             {"role": "coordinator", "goal": "Manage group conversation flow"},
             {"role": "worker_1", "goal": "Execute primary tasks"},
             {"role": "critic", "goal": "Review and validate outputs"},
+        ]
+    elif framework == FrameworkChoice.VERCEL_AI:
+        agents = [
+            {"role": "planner", "goal": "Break down tasks into actionable steps"},
+            {"role": "executor", "goal": "Execute each step and return results"},
         ]
     else:  # langgraph / semantic-kernel
         agents = [

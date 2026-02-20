@@ -25,6 +25,7 @@
 | CrewAI | Team-based agents | Python |
 | AutoGen | Multi-agent collab | Python |
 | Semantic Kernel | Enterprise | .NET/Python/Java |
+| Vercel AI SDK | TypeScript agents | TypeScript/Node.js |
 
 ### 3. Market Trend: SaaS → AaaS
 - Salesforce Agentforce

@@ -1,7 +1,9 @@
 """Code generation engine — renders agent templates into deployable packages.
 
-Uses Jinja2 templates to produce framework-specific Python code, Docker configs,
-environment files, and setup instructions.
+Uses Jinja2 templates to produce framework-specific Python or TypeScript code,
+Docker configs, cloud deployment configs, environment files, and setup
+instructions.  Supports Python frameworks (LangGraph, CrewAI, AutoGen,
+Semantic Kernel) and TypeScript frameworks (Vercel AI SDK).
 """
 
 import logging
@@ -73,10 +75,122 @@ def _collect_env_vars(servers: List[MCPServerConfig]) -> List[str]:
     return env_vars
 
 
+# Frameworks that produce TypeScript instead of Python
+_TS_FRAMEWORKS = {FrameworkChoice.VERCEL_AI}
+
+
+def _is_typescript(framework: FrameworkChoice) -> bool:
+    """Return True if the framework targets TypeScript/Node.js."""
+    return framework in _TS_FRAMEWORKS
+
+
+def _generate_agent_code(
+    template: AgentTemplate,
+    ctx: Dict[str, Any],
+    files: List[GeneratedFile],
+) -> None:
+    """Generate the main agent source file (Python or TypeScript)."""
+    fw = template.framework
+    if _is_typescript(fw):
+        tmpl_name = f"{fw.value.replace('-', '_')}_agent.ts.j2"
+        out_path, lang = "agent.ts", "typescript"
+    else:
+        tmpl_name = f"{fw.value.replace('-', '_')}_agent.py.j2"
+        out_path, lang = "agent.py", "python"
+    try:
+        code = _render(tmpl_name, ctx)
+        files.append(GeneratedFile(path=out_path, content=code, language=lang))
+    except Exception as exc:
+        logger.warning("No agent template for %s: %s", tmpl_name, exc)
+
+
+def _generate_deps(
+    template: AgentTemplate,
+    ctx: Dict[str, Any],
+    files: List[GeneratedFile],
+) -> None:
+    """Generate dependency manifest (requirements.txt or package.json + tsconfig)."""
+    if _is_typescript(template.framework):
+        files.append(GeneratedFile(
+            path="package.json",
+            content=_render("package_json.j2", ctx),
+            language="json",
+        ))
+        files.append(GeneratedFile(
+            path="tsconfig.json",
+            content=_render("tsconfig_json.j2", ctx),
+            language="json",
+        ))
+    else:
+        files.append(GeneratedFile(
+            path="requirements.txt",
+            content=_render("requirements.txt.j2", ctx),
+            language="text",
+        ))
+
+
+def _generate_docker(
+    template: AgentTemplate,
+    ctx: Dict[str, Any],
+    files: List[GeneratedFile],
+) -> None:
+    """Generate Dockerfile + docker-compose.yml (Python or Node variant)."""
+    if _is_typescript(template.framework):
+        dockerfile_tmpl = "Dockerfile_node.j2"
+    else:
+        dockerfile_tmpl = "Dockerfile.j2"
+    files.append(GeneratedFile(
+        path="Dockerfile",
+        content=_render(dockerfile_tmpl, ctx),
+        language="dockerfile",
+    ))
+    files.append(GeneratedFile(
+        path="docker-compose.yml",
+        content=_render("docker_compose.yml.j2", ctx),
+        language="yaml",
+    ))
+
+
+def _generate_deploy_configs(
+    deployment: DeploymentTarget,
+    ctx: Dict[str, Any],
+    files: List[GeneratedFile],
+) -> None:
+    """Generate cloud deployment configs when deployment != LOCAL."""
+    if deployment in (DeploymentTarget.CLOUD, DeploymentTarget.EXPORT):
+        try:
+            files.append(GeneratedFile(
+                path="railway.toml",
+                content=_render("railway_toml.j2", ctx),
+                language="toml",
+            ))
+        except Exception as exc:
+            logger.warning("Could not render railway.toml: %s", exc)
+        try:
+            files.append(GeneratedFile(
+                path="render.yaml",
+                content=_render("render_yaml.j2", ctx),
+                language="yaml",
+            ))
+        except Exception as exc:
+            logger.warning("Could not render render.yaml: %s", exc)
+        try:
+            files.append(GeneratedFile(
+                path="vercel.json",
+                content=_render("vercel_json.j2", ctx),
+                language="json",
+            ))
+        except Exception as exc:
+            logger.warning("Could not render vercel.json: %s", exc)
+
+
 def generate_package(req: GenerateRequest) -> GeneratedPackage:
     """Generate a full agent package from a template + configuration.
 
     Returns a GeneratedPackage with all files ready to download or deploy.
+    Generates Python packages for LangGraph/CrewAI/AutoGen/Semantic Kernel,
+    and TypeScript packages for Vercel AI SDK.  Cloud deployments include
+    Railway, Render, and Vercel configs.
     """
     template = get_template(req.template_id)
     if not template:
@@ -84,49 +198,33 @@ def generate_package(req: GenerateRequest) -> GeneratedPackage:
 
     ctx = _build_context(template, req)
     files: List[GeneratedFile] = []
+    is_ts = _is_typescript(template.framework)
 
-    # 1. Main agent code — framework-specific
-    framework_template = f"{template.framework.value}_agent.py.j2"
-    try:
-        agent_code = _render(framework_template, ctx)
-        files.append(GeneratedFile(path="agent.py", content=agent_code, language="python"))
-    except Exception as exc:
-        logger.warning("No template for %s: %s", framework_template, exc)
+    # 1. Main agent code — framework-specific (Python or TypeScript)
+    _generate_agent_code(template, ctx, files)
 
-    # 2. Requirements file
-    files.append(GeneratedFile(
-        path="requirements.txt",
-        content=_render("requirements.txt.j2", ctx),
-        language="text",
-    ))
+    # 2. Dependencies (requirements.txt or package.json + tsconfig.json)
+    _generate_deps(template, ctx, files)
 
-    # 3. Dockerfile
-    files.append(GeneratedFile(
-        path="Dockerfile",
-        content=_render("Dockerfile.j2", ctx),
-        language="dockerfile",
-    ))
+    # 3. Dockerfile + docker-compose.yml
+    _generate_docker(template, ctx, files)
 
-    # 4. docker-compose.yml
-    files.append(GeneratedFile(
-        path="docker-compose.yml",
-        content=_render("docker_compose.yml.j2", ctx),
-        language="yaml",
-    ))
-
-    # 5. .env.example
+    # 4. .env.example
     files.append(GeneratedFile(
         path=".env.example",
         content=_render("env_example.j2", ctx),
         language="text",
     ))
 
-    # 6. MCP config
+    # 5. MCP config
     files.append(GeneratedFile(
         path="mcp-config.json",
         content=_render("mcp_config.json.j2", ctx),
         language="json",
     ))
+
+    # 6. Cloud deployment configs (Railway, Render, Vercel) — when not LOCAL
+    _generate_deploy_configs(req.deployment, ctx, files)
 
     # 7. README
     files.append(GeneratedFile(
@@ -135,23 +233,32 @@ def generate_package(req: GenerateRequest) -> GeneratedPackage:
         language="markdown",
     ))
 
-    # Build setup instructions
-    setup = [
-        "cp .env.example .env",
-        "Fill in the required environment variables in .env",
-        "pip install -r requirements.txt",
-        "python agent.py",
-    ]
+    # Build setup instructions — language-aware
+    if is_ts:
+        setup = [
+            "cp .env.example .env",
+            "Fill in the required environment variables in .env",
+            "npm install",
+            "npx tsx agent.ts",
+        ]
+    else:
+        setup = [
+            "cp .env.example .env",
+            "Fill in the required environment variables in .env",
+            "pip install -r requirements.txt",
+            "python agent.py",
+        ]
     if req.deployment == DeploymentTarget.LOCAL:
         setup = ["docker compose up --build"] + setup
 
+    lang_label = "TypeScript (Vercel AI SDK)" if is_ts else template.framework.value
     return GeneratedPackage(
         project_name=req.project_name,
         template_id=req.template_id,
         framework=template.framework,
         deployment=req.deployment,
         files=files,
-        summary=f"Generated {template.name} using {template.framework.value} with {len(ctx['mcp_servers'])} MCP integration(s).",
+        summary=f"Generated {template.name} using {lang_label} with {len(ctx['mcp_servers'])} MCP integration(s).",
         setup_instructions=setup,
         env_vars=ctx["env_vars"],
     )

@@ -36,6 +36,16 @@ cp .env.example .env
 docker compose up --build
 ```
 
+{% if framework == "vercel-ai" %}
+### Option 2: Local Node.js
+
+```bash
+cp .env.example .env
+# Fill in your API keys in .env
+npm install
+npx tsx agent.ts
+```
+{% else %}
 ### Option 2: Local Python
 
 ```bash
@@ -44,6 +54,7 @@ cp .env.example .env
 pip install -r requirements.txt
 python agent.py
 ```
+{% endif %}
 
 ## Environment Variables
 
@@ -61,12 +72,23 @@ python agent.py
 
 ```
 {{ project_name }}/
+{% if framework == "vercel-ai" %}
+├── agent.ts              # Main agent code (Vercel AI SDK)
+├── package.json          # Node.js dependencies
+├── tsconfig.json         # TypeScript configuration
+{% else %}
 ├── agent.py              # Main agent code ({{ framework }})
 ├── requirements.txt      # Python dependencies
+{% endif %}
 ├── Dockerfile            # Container build
 ├── docker-compose.yml    # Container orchestration
 ├── mcp-config.json       # MCP server configuration
 ├── .env.example          # Environment variable template
+{% if deployment in ("cloud", "export") %}
+├── railway.toml          # Railway deployment config
+├── render.yaml           # Render deployment config
+├── vercel.json           # Vercel deployment config
+{% endif %}
 └── README.md             # This file
 ```
 

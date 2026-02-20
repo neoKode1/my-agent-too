@@ -442,7 +442,7 @@ function RecommendationPanel({
   messages: DisplayMessage[];
 }) {
   /* Detect if the user is a developer based on their messages */
-  const devTerms = /\b(api|mcp|framework|rag|deploy|webhook|sdk|repo|github|langchain|crewai|langgraph|autogen|docker|kubernetes|endpoint|microservice|llm|vector|embedding)\b/i;
+  const devTerms = /\b(api|mcp|framework|rag|deploy|webhook|sdk|repo|github|langchain|crewai|langgraph|autogen|semantic.kernel|vercel|nextjs|next\.js|typescript|docker|kubernetes|endpoint|microservice|llm|vector|embedding)\b/i;
   const isDeveloper = messages
     .filter((m) => m.role === "user")
     .some((m) => devTerms.test(m.content));

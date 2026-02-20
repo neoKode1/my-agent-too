@@ -29,6 +29,7 @@ class FrameworkChoice(str, Enum):
     CREWAI = "crewai"
     AUTOGEN = "autogen"
     SEMANTIC_KERNEL = "semantic-kernel"
+    VERCEL_AI = "vercel-ai"
 
 
 class DeploymentTarget(str, Enum):

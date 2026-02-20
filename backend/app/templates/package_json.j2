@@ -1,0 +1,30 @@
+{
+  "name": "{{ project_name | replace(' ', '-') | lower }}",
+  "version": "1.0.0",
+  "description": "{{ template_description }}",
+  "type": "module",
+  "scripts": {
+    "start": "tsx agent.ts",
+    "dev": "tsx watch agent.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ai": "^4.1.0",
+    "@ai-sdk/anthropic": "^1.1.0",
+    "dotenv": "^16.4.0",
+    "zod": "^3.23.0"
+{% if mcp_servers %}
+    ,"@modelcontextprotocol/sdk": "^1.0.0"
+{% endif %}
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
+

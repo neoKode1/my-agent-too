@@ -12,16 +12,18 @@
 
 ## 🎯 What is +12 Monkeys?
 
-+12 Monkeys is a **plug-and-play platform** that enables developers to create, configure, and deploy production-ready AI agent systems without writing code. Simply describe what you need in natural language, and the platform generates a **complete 7-file package** ready to deploy with `docker compose up`.
++12 Monkeys is a **plug-and-play platform** that enables developers to create, configure, and deploy production-ready AI agent systems without writing code. Simply describe what you need in natural language, and the platform generates a **complete deployable package** — Python or TypeScript — ready to deploy with `docker compose up`, Railway, Render, or Vercel.
 
 ### Key Features
 
 ✨ **Conversational Configuration** - No code required, just chat
 🔌 **MCP-Native** - Built on Model Context Protocol (Linux Foundation standard)
 🎨 **20 Agent Templates** - Customer service, research, data analysis, code gen, multi-agent teams, sales & lead gen, content creation, e-commerce, operations, healthcare, real estate, education, STEM lab sim, STEM coding tutor, grant writing, literature review, portfolio risk, compliance & fraud, mission planning, clinical decision support
-🚀 **Three Deployment Options** - LOCAL (docker compose), CLOUD (Railway/Render), EXPORT (self-host)
-🔧 **Multi-Framework Support** - LangGraph, CrewAI, AutoGen, Semantic Kernel
-📦 **Production-Ready Output** - 7 files: agent.py, Dockerfile, docker-compose.yml, requirements.txt, .env.example, mcp-config.json, README.md
+🚀 **Three Deployment Options** - LOCAL (docker compose), CLOUD (Railway/Render/Vercel), EXPORT (self-host)
+🔧 **Multi-Framework Support** - LangGraph, CrewAI, AutoGen, Semantic Kernel (Python) + Vercel AI SDK (TypeScript)
+🐍 **Python Packages** - agent.py, requirements.txt, Dockerfile (Python 3.12), docker-compose.yml
+📘 **TypeScript Packages** - agent.ts, package.json, tsconfig.json, Dockerfile (Node 22), docker-compose.yml
+☁️ **Cloud Deploy Configs** - railway.toml, render.yaml, vercel.json (auto-generated for CLOUD/EXPORT)
 📋 **Copy-to-Clipboard UI** - Easy code extraction with visual feedback
 ⚡ **30-Second Deployment** - From generation to running agent in half a minute
 
@@ -104,34 +106,40 @@ docker compose up --build
 
 ## 📦 What You Receive
 
-Every generated agent package includes **7 production-ready files**:
+Every generated agent package includes **production-ready files** tailored to the selected language and deployment target:
 
-### 1. **agent.py** - Framework-Specific Agent Code
-- ✅ Complete LangGraph/CrewAI/AutoGen implementation
-- ✅ Multi-agent workflows with state management
-- ✅ MCP server integrations
-- ✅ Error handling and logging
-- ✅ Entry point ready to run
+### Python Packages (LangGraph / CrewAI / AutoGen / Semantic Kernel)
 
-### 2. **requirements.txt** - Python Dependencies
-- ✅ Framework dependencies (langgraph, crewai, autogen)
-- ✅ LLM SDK (anthropic)
-- ✅ MCP SDK (if using MCP servers)
-- ✅ Utility libraries (dotenv, etc.)
+| File | Description |
+|------|-------------|
+| `agent.py` | Framework-specific agent code with multi-agent workflows |
+| `requirements.txt` | Python dependencies (framework SDK, anthropic, mcp, dotenv) |
+| `Dockerfile` | Python 3.12-slim container (+ Node.js if MCP servers need npx) |
+| `docker-compose.yml` | One-command deployment with env loading + port mapping |
+| `.env.example` | Environment variable template with all required keys |
+| `mcp-config.json` | MCP server configuration |
+| `README.md` | Setup instructions for Docker and local development |
 
-### 3. **Dockerfile** - Container Build
-- ✅ Python 3.12 base image
-- ✅ Dependency installation
-- ✅ Node.js (if MCP servers need npx)
-- ✅ Port exposure (8080)
-- ✅ Startup command
+### TypeScript Packages (Vercel AI SDK)
 
-### 4. **docker-compose.yml** - One-Command Deployment
-- ✅ Service definition
-- ✅ Environment variable loading
-- ✅ Port mapping (8080:8080)
-- ✅ Auto-restart policy
-- ✅ Volume mounts for MCP config
+| File | Description |
+|------|-------------|
+| `agent.ts` | TypeScript agent using Vercel AI SDK with multi-agent pipeline |
+| `package.json` | Node.js dependencies (ai, @ai-sdk/anthropic, zod, tsx) |
+| `tsconfig.json` | TypeScript compiler config (ES2022, ESM) |
+| `Dockerfile` | Node.js 22-slim container |
+| `docker-compose.yml` | One-command deployment with env loading + port mapping |
+| `.env.example` | Environment variable template with all required keys |
+| `mcp-config.json` | MCP server configuration |
+| `README.md` | Setup instructions for Docker and local development |
+
+### Cloud Deployment Configs (CLOUD / EXPORT targets)
+
+| File | Description |
+|------|-------------|
+| `railway.toml` | Railway deployment config (auto-detects Python/Node runtime) |
+| `render.yaml` | Render Blueprint spec with health checks and env vars |
+| `vercel.json` | Vercel serverless config with function routes |
 
 ### 5. **.env.example** - Environment Variables Template
 - ✅ LLM API keys (ANTHROPIC_API_KEY)
@@ -185,8 +193,12 @@ Every generated agent package includes **7 production-ready files**:
 User Input → Conversational Wizard → Template Registry → Code Generator
                                                               ↓
                                                     Jinja2 Rendering Engine
-                                                              ↓
-                                        7-File Package (agent.py, Dockerfile, etc.)
+                                                         ↓              ↓
+                                              Python Package    TypeScript Package
+                                            (agent.py + pip)   (agent.ts + npm)
+                                                         ↓              ↓
+                                              Docker + Cloud Deploy Configs
+                                            (railway.toml / render.yaml / vercel.json)
                                                               ↓
                                         Frontend UI (Copy/Download/Preview)
                                                               ↓
@@ -503,28 +515,32 @@ docker compose up --build
 
 ## ✅ Current Status
 
-**Phase:** ✅ Foundation Complete
+**Phase:** ✅ Foundation Complete + Tier 1 Multi-Language Expansion
 **Implemented:**
 - ✅ Conversational wizard with chat UI
 - ✅ Template registry with 20 built-in templates
 - ✅ Jinja2-based code generation pipeline
-- ✅ 7-file package generation (agent.py, Dockerfile, etc.)
+- ✅ Python package generation (agent.py, requirements.txt, Dockerfile)
+- ✅ TypeScript package generation (agent.ts, package.json, tsconfig.json, Dockerfile)
+- ✅ Multi-framework support: LangGraph, CrewAI, AutoGen, Semantic Kernel (Python) + Vercel AI SDK (TypeScript)
+- ✅ Cloud deployment configs: railway.toml, render.yaml, vercel.json
 - ✅ Copy-to-clipboard UI with visual feedback
 - ✅ Download bundle functionality
 - ✅ In-browser code preview with syntax highlighting
 - ✅ LOCAL deployment support (docker compose)
-- ✅ CLOUD deployment support (Railway/Render)
+- ✅ CLOUD deployment support (Railway/Render/Vercel)
 - ✅ EXPORT deployment support (self-host)
 - ✅ NANDA Index integration
 - ✅ MCP server auto-configuration
-- ✅ Multi-framework support (LangGraph, CrewAI, AutoGen)
 
 **Next Steps:**
-1. Add more agent templates (Semantic Kernel, custom templates)
-2. Implement one-click cloud deployment
-3. Add agent monitoring and analytics
-4. Build agent marketplace
-5. Add custom template builder
+1. Add Rust agent package (Cargo.toml, async agent with tokio)
+2. Add Go agent package (go.mod, goroutine pipeline)
+3. Add Kubernetes manifests (deployment.yaml, service.yaml)
+4. Add AWS Lambda/SAM deployment support
+5. Implement one-click cloud deployment
+6. Add agent monitoring and analytics
+7. Build agent marketplace
 
 ---
 
