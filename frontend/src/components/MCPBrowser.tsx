@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import {
   fetchMCPServers,
   MCPServerEntry,
@@ -118,10 +120,12 @@ export default function MCPBrowser() {
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: "#1A1A1A" }}>
         <div className="flex items-center gap-3">
-          <a href="/" className="flex items-center gap-2.5 hover:opacity-80 transition">
-            <img
+          <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition">
+            <Image
               src="/favicon-monkey.png"
               alt="+12 Monkeys"
+              width={32}
+              height={32}
               className="h-8 w-8 brightness-0 invert"
             />
             <span
@@ -136,7 +140,7 @@ export default function MCPBrowser() {
             >
               +12 Monkeys
             </span>
-          </a>
+          </Link>
           <span className="text-[#333]">|</span>
           <h1 className="text-lg font-semibold">MCP Servers</h1>
           <span className="text-[12px] text-[#666] rounded-full px-2 py-0.5" style={{ background: "#1A1A1A" }}>
