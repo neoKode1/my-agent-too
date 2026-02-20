@@ -418,7 +418,6 @@ async def process_message(
     if recommendation:
         session.status = SessionStatus.RECOMMENDING
         session.recommendation = recommendation
-        session.status = SessionStatus.CONFIRMED
 
     sessions.save(session)
 
@@ -560,6 +559,7 @@ async def process_message_stream(
             api_messages.append({"role": "user", "content": tool_results})
         else:
             full_text = full_text or "I gathered a lot of information. Let me summarize what I found."
+            yield {"event": "delta", "data": full_text}
 
     except Exception as exc:
         logger.exception("Streaming error: %s", exc)
@@ -578,7 +578,6 @@ async def process_message_stream(
     if recommendation:
         session.status = SessionStatus.RECOMMENDING
         session.recommendation = recommendation
-        session.status = SessionStatus.CONFIRMED
     sessions.save(session)
 
     # Send the final done event with full structured response

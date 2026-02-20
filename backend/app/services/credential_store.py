@@ -6,7 +6,7 @@ provides the same interface with an in-memory backend.
 """
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from cryptography.fernet import Fernet
@@ -68,7 +68,7 @@ def set_credentials(
             CredentialEntry(key=key, value=encrypted, server_id=server_id)
         )
 
-    proj.updated_at = datetime.utcnow()
+    proj.updated_at = datetime.now(timezone.utc)
     _STORE[project_id] = proj
     return proj
 

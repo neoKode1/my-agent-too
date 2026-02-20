@@ -3,7 +3,7 @@
 Swap this out for Redis or a database-backed store in production.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from app.models.conversation import WizardSession
@@ -24,7 +24,7 @@ class SessionStore:
         return self._sessions.get(session_id)
 
     def save(self, session: WizardSession) -> None:
-        session.updated_at = datetime.utcnow()
+        session.updated_at = datetime.now(timezone.utc)
         self._sessions[session.session_id] = session
 
     def list_sessions(self) -> List[WizardSession]:

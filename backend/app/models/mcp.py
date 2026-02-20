@@ -1,6 +1,6 @@
 """Pydantic models for the MCP integration layer."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -62,7 +62,7 @@ class MCPHealthResult(BaseModel):
     tools: List[MCPToolSchema] = Field(default_factory=list)
     response_time_ms: float = 0
     error: Optional[str] = None
-    checked_at: datetime = Field(default_factory=datetime.utcnow)
+    checked_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class CredentialEntry(BaseModel):
@@ -76,8 +76,8 @@ class ProjectCredentials(BaseModel):
     """All credentials for a specific project/session."""
     project_id: str
     credentials: List[CredentialEntry] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ---------- API request / response ----------

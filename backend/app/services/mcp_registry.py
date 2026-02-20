@@ -984,8 +984,8 @@ def update_server_health(
         srv.status = status
         if tools is not None:
             srv.tools = tools
-        from datetime import datetime
-        srv.last_health_check = datetime.utcnow()
+        from datetime import datetime, timezone
+        srv.last_health_check = datetime.now(timezone.utc)
 
 
 def server_count() -> int:

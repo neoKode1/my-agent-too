@@ -1,6 +1,6 @@
 """Models for the conversational wizard – sessions, messages, and extracted requirements."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
@@ -45,7 +45,7 @@ class DeploymentTarget(str, Enum):
 class Message(BaseModel):
     role: Role
     content: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ExtractedRequirements(BaseModel):
@@ -84,8 +84,8 @@ class WizardSession(BaseModel):
     messages: List[Message] = Field(default_factory=list)
     requirements: ExtractedRequirements = Field(default_factory=ExtractedRequirements)
     recommendation: Optional[Recommendation] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ---------- API request / response ----------

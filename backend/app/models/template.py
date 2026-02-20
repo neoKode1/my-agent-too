@@ -1,6 +1,6 @@
 """Models for agent templates and code generation."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -80,7 +80,7 @@ class AgentTemplate(BaseModel):
     optional_fields: List[TemplateField] = Field(default_factory=list)
     estimated_cost: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ---------- Generation request / response ----------
@@ -114,5 +114,5 @@ class GeneratedPackage(BaseModel):
     summary: str = ""
     setup_instructions: List[str] = Field(default_factory=list)
     env_vars: List[str] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

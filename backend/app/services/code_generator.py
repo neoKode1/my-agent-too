@@ -11,6 +11,7 @@ Supported languages / frameworks:
   Go         — Google ADK-Go
 """
 
+import json
 import logging
 import re
 from pathlib import Path
@@ -456,7 +457,6 @@ def generate_mcp_wrapper(
             }
         }
     }
-    import json
     files.append(GeneratedFile(
         path="mcp-config.json",
         content=json.dumps(mcp_config, indent=2),
