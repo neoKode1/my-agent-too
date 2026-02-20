@@ -1,9 +1,11 @@
 """Wizard API — chat endpoint, session management, and confirmation flow."""
 
+import json
 import logging
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.models.conversation import (
@@ -19,7 +21,7 @@ from app.models.template import (
     MCPServerConfig,
 )
 from app.services.code_generator import generate_mcp_wrapper, generate_package
-from app.services.orchestrator import process_message
+from app.services.orchestrator import process_message, process_message_stream
 from app.services.session_store import sessions
 from app.services.template_registry import get_template_for_framework
 
@@ -38,6 +40,36 @@ async def chat(body: ChatRequest):
     return await process_message(
         session_id=body.session_id,
         user_message=body.message,
+    )
+
+
+@router.post("/chat/stream")
+async def chat_stream(body: ChatRequest):
+    """Streaming version of the chat endpoint.
+
+    Returns a Server-Sent Events stream with events:
+      - event: status  — tool/activity status messages
+      - event: delta   — incremental text chunks
+      - event: done    — final ChatResponse JSON
+    """
+
+    async def event_generator():
+        async for evt in process_message_stream(
+            session_id=body.session_id,
+            user_message=body.message,
+        ):
+            event_type = evt.get("event", "delta")
+            data = evt.get("data", "")
+            yield f"event: {event_type}\ndata: {json.dumps(data)}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 

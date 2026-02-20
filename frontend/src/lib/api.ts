@@ -97,6 +97,75 @@ export async function sendMessage(
   return res.json();
 }
 
+/** SSE event from the streaming chat endpoint. */
+export interface StreamEvent {
+  event: "status" | "delta" | "done";
+  data: string;
+}
+
+/**
+ * Send a message via the streaming endpoint.
+ * Calls `onEvent` for each SSE event received.
+ * Returns the final ChatResponse from the `done` event.
+ */
+export async function sendMessageStream(
+  message: string,
+  sessionId: string | undefined,
+  onEvent: (evt: StreamEvent) => void
+): Promise<ChatResponse> {
+  const res = await fetch(`${API_BASE}/api/v1/wizard/chat/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, session_id: sessionId || null }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status}`);
+  }
+
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error("No response body");
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let finalResponse: ChatResponse | null = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    let currentEvent = "delta";
+    for (const line of lines) {
+      if (line.startsWith("event: ")) {
+        currentEvent = line.slice(7).trim();
+      } else if (line.startsWith("data: ")) {
+        const rawData = line.slice(6);
+        try {
+          const parsed = JSON.parse(rawData);
+          if (currentEvent === "done") {
+            // `done` data is a JSON string containing the ChatResponse
+            finalResponse = typeof parsed === "string" ? JSON.parse(parsed) : parsed;
+            onEvent({ event: "done", data: typeof parsed === "string" ? parsed : rawData });
+          } else {
+            onEvent({ event: currentEvent as StreamEvent["event"], data: parsed });
+          }
+        } catch {
+          onEvent({ event: currentEvent as StreamEvent["event"], data: rawData });
+        }
+      }
+    }
+  }
+
+  if (!finalResponse) {
+    throw new Error("Stream ended without a done event");
+  }
+  return finalResponse;
+}
+
 export async function confirmAndGenerate(
   sessionId: string,
   projectName: string = "my-agent"

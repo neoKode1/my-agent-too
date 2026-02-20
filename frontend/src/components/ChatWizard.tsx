@@ -8,6 +8,8 @@ import {
   GeneratedPackage,
   Recommendation,
   sendMessage,
+  sendMessageStream,
+  StreamEvent,
 } from "@/lib/api";
 
 
@@ -194,6 +196,8 @@ export default function ChatWizard() {
   const [projectName, setProjectName] = useState("my-agent");
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [typingIdx, setTypingIdx] = useState<number | null>(null);
+  const [streamingIdx, setStreamingIdx] = useState<number | null>(null);
+  const [toolStatus, setToolStatus] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -229,28 +233,66 @@ export default function ChatWizard() {
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setLoading(true);
+    setToolStatus(null);
     if (isRepoUrl(text)) setAnalyzingRepo(true);
 
+    // Add an empty assistant message placeholder for streaming
+    let assistantIdx: number | null = null;
+    setMessages((prev) => {
+      const next = [...prev, { role: "assistant" as const, content: "" }];
+      assistantIdx = next.length - 1;
+      setStreamingIdx(next.length - 1);
+      return next;
+    });
+
     try {
-      const res: ChatResponse = await sendMessage(text, sessionId);
+      const res = await sendMessageStream(text, sessionId, (evt: StreamEvent) => {
+        if (evt.event === "status") {
+          setToolStatus(evt.data);
+        } else if (evt.event === "delta") {
+          // Append streamed text to the assistant placeholder
+          setMessages((prev) => {
+            const updated = [...prev];
+            const idx = updated.length - 1;
+            if (updated[idx] && updated[idx].role === "assistant") {
+              updated[idx] = { ...updated[idx], content: updated[idx].content + evt.data };
+            }
+            return updated;
+          });
+          setToolStatus(null); // clear status once text starts flowing
+        } else if (evt.event === "done") {
+          setToolStatus(null);
+        }
+      });
+
       if (!sessionId) setSessionId(res.session_id);
       setStatus(res.status);
+      // Update the final message content from the done event
       setMessages((prev) => {
-        const next = [...prev, { role: "assistant" as const, content: res.reply }];
-        setTypingIdx(next.length - 1); // trigger typewriter on new msg
-        return next;
+        const updated = [...prev];
+        const idx = updated.length - 1;
+        if (updated[idx] && updated[idx].role === "assistant") {
+          updated[idx] = { ...updated[idx], content: res.reply };
+        }
+        return updated;
       });
       if (res.recommendation) {
         setRecommendation(res.recommendation);
       }
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "⚠️ Failed to reach the server. Is the backend running?" },
-      ]);
+      setMessages((prev) => {
+        const updated = [...prev];
+        const idx = updated.length - 1;
+        if (updated[idx] && updated[idx].role === "assistant") {
+          updated[idx] = { ...updated[idx], content: "⚠️ Failed to reach the server. Is the backend running?" };
+        }
+        return updated;
+      });
     } finally {
       setLoading(false);
       setAnalyzingRepo(false);
+      setStreamingIdx(null);
+      setToolStatus(null);
     }
   }, [input, loading, sessionId]);
 
@@ -338,10 +380,16 @@ export default function ChatWizard() {
                   </div>
                 </div>
               ) : (
-                /* ── Assistant flowing text (typewriter for latest) ── */
+                /* ── Assistant flowing text ── */
                 <div className="space-y-2">
                   <div className="assistant-content text-[14px] leading-[1.75] text-[#D4D4D4]">
-                    {typingIdx === i ? (
+                    {streamingIdx === i ? (
+                      /* Live-streaming: render content as it arrives */
+                      <>
+                        <span dangerouslySetInnerHTML={{ __html: formatAssistant(m.content) }} />
+                        <span className="inline-block w-2 h-4 bg-[#6C63FF] animate-pulse ml-0.5 align-middle rounded-sm" />
+                      </>
+                    ) : typingIdx === i ? (
                       <TypewriterMessage
                         content={m.content}
                         onDone={() => setTypingIdx(null)}
@@ -350,8 +398,15 @@ export default function ChatWizard() {
                       <span dangerouslySetInnerHTML={{ __html: formatAssistant(m.content) }} />
                     )}
                   </div>
-                  {/* Action buttons row (only show when not typing) */}
-                  {typingIdx !== i && (
+                  {/* Tool status indicator while streaming */}
+                  {streamingIdx === i && toolStatus && (
+                    <div className="flex items-center gap-2 text-xs text-[#6C63FF] animate-pulse">
+                      <span className="typing-dot w-1.5 h-1.5 rounded-full bg-[#6C63FF]" />
+                      {toolStatus}
+                    </div>
+                  )}
+                  {/* Action buttons row (only show when done) */}
+                  {typingIdx !== i && streamingIdx !== i && m.content && (
                     <div className="flex items-center gap-1 pt-1">
                       <button
                         onClick={() => handleCopy(m.content, i)}
@@ -377,13 +432,18 @@ export default function ChatWizard() {
             </div>
           ))}
 
-          {/* Typing indicator */}
-          {loading && (
+          {/* Typing indicator — only show when loading AND no streamed content yet */}
+          {loading && streamingIdx === null && (
             <div className="msg-enter flex items-center gap-1 py-2">
               {analyzingRepo ? (
                 <span className="text-sm text-[#6C63FF] flex items-center gap-2">
                   <span className="typing-dot w-2 h-2 rounded-full bg-[#6C63FF]" />
                   🔍 Analyzing repository…
+                </span>
+              ) : toolStatus ? (
+                <span className="text-sm text-[#6C63FF] flex items-center gap-2">
+                  <span className="typing-dot w-2 h-2 rounded-full bg-[#6C63FF]" />
+                  {toolStatus}
                 </span>
               ) : (
                 <>

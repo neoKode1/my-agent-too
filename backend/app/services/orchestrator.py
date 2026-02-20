@@ -1,17 +1,20 @@
-"""Wizard Orchestrator — drives the multi-turn conversation with an LLM.
+"""Wizard Orchestrator — drives the multi-turn conversation with Claude.
 
-Flow:
+Flow (with Tool Use):
 1. User sends a message.
-2. Orchestrator feeds the full conversation + a system prompt to Claude.
-3. Claude responds with a JSON payload:  { reply, requirements, is_complete }
-4. If is_complete → call recommender.build_recommendation() and present result.
-5. Otherwise → return the clarifying question to the user.
+2. Orchestrator feeds the full conversation + system prompt + tools to Claude.
+3. Claude may call tools (search MCP registry, analyze repos, get recommendations)
+   or respond with text.
+4. Tool results are fed back — loop until Claude returns a final text response.
+5. If Claude called get_framework_recommendation, we extract the recommendation.
+6. Return the assistant reply + updated state to the frontend.
+
+Features: Tool Use, Prompt Caching, Extended Thinking (architecture decisions).
 """
 
 import json
 import logging
-from dataclasses import asdict
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 import anthropic
 
@@ -19,19 +22,15 @@ from app.core.config import settings
 from app.models.conversation import (
     ChatResponse,
     ExtractedRequirements,
+    FrameworkChoice,
+    DeploymentTarget,
     Message,
     Recommendation,
     Role,
     SessionStatus,
     WizardSession,
 )
-from app.services.recommender import build_recommendation
-from app.services.repo_analyzer import (
-    analyze_repo,
-    contains_repo_url,
-    format_repo_context,
-    parse_repo_url,
-)
+from app.services.claude_tools import TOOLS, execute_tool
 from app.services.session_store import sessions
 
 logger = logging.getLogger(__name__)
@@ -110,16 +109,16 @@ WHAT TO GATHER (through conversation, not a form)
    For non-technical users, default to cloud and just confirm.
 
 ═══════════════════════════════════════════════════════════════
-COMPLETION CRITERIA — When to set is_complete=true
+COMPLETION CRITERIA — When to call get_framework_recommendation
 ═══════════════════════════════════════════════════════════════
 
-Set is_complete=true ONLY when you have ALL of:
+Call the get_framework_recommendation tool ONLY when you have ALL of:
   ✓ A clear, specific use case (not just "I need an agent")
-  ✓ At least 1 integration identified
+  ✓ At least 1 integration identified (use search_mcp_servers to verify)
   ✓ Enough detail to build something useful (you could explain to an \
     engineer what to build in 2 sentences)
 
-Do NOT set is_complete=true if:
+Do NOT call get_framework_recommendation if:
   ✗ The use case is too vague ("help me with stuff")
   ✗ You haven't identified any services to connect
   ✗ You've only had 1 exchange and the user gave a short first message
@@ -151,127 +150,62 @@ RULES
 - Be warm and casual — like a knowledgeable friend, not a form.
 - Never start with "Great question!" or empty flattery. Get to the point.
 - Keep replies under 3 short paragraphs. Brevity = respect.
-- Always respond with ONLY valid JSON (no markdown, no backticks, no extra text).
+- Respond with natural text — NOT JSON. Use the provided tools for \
+  structured actions (searching servers, analyzing repos, recommending).
 
 ═══════════════════════════════════════════════════════════════
-FEW-SHOT EXAMPLES
+TOOLS YOU HAVE ACCESS TO
 ═══════════════════════════════════════════════════════════════
 
---- Example 1: Non-technical user (plumber) ---
+You have real-time access to these tools — use them proactively:
 
-User: "I'm a plumber and I miss calls all day because I'm under sinks. I need something to handle that."
+• search_mcp_servers — Look up available integrations by keyword or category. \
+  Use this to verify server IDs before recommending them.
+• get_mcp_server_details — Get full details (env vars, docs URL) for a server.
+• search_templates — Find pre-built agent templates matching a use case.
+• analyze_repository — Analyze a GitHub/HuggingFace repo URL. Use this when \
+  the user pastes a repo link.
+• get_framework_recommendation — Generate a full recommendation once you have \
+  enough information. This produces the final architecture plan.
 
-{
-  "reply": "Totally get it — every missed call is potentially a lost job. Here's what I'm thinking: an AI assistant that answers your phone 24/7, takes down the caller's name and what they need, and books them into your calendar. It can even text you a summary after each call so you know what's waiting when you surface. Do you use Google Calendar or something else to track your schedule?",
-  "requirements": {
-    "use_case": "phone_answering_scheduling",
-    "description": "AI phone receptionist for a plumbing business — answers calls, captures job details, books appointments, texts summaries to owner",
-    "integrations": ["twilio"],
-    "capabilities": ["scheduling", "memory"],
-    "scale": "low",
-    "compliance": [],
-    "framework_preference": null,
-    "deployment_preference": null
-  },
-  "is_complete": false
-}
-
---- Example 2: Developer ---
-
-User: "I want an agent that monitors my GitHub repos for new PRs, runs a code review, and posts a summary to our Slack channel."
-
-{
-  "reply": "Nice — that's a solid CI assistant. I'd wire up the GitHub MCP server for repo/PR access and Slack for posting summaries. For the code review logic, LangGraph would give you the most control over the review pipeline (plan → analyze → summarize). Any preference on framework, or should I pick the best fit? Also — how many repos are we talking? Just want to gauge scale.",
-  "requirements": {
-    "use_case": "code_review_automation",
-    "description": "Automated PR code review agent — monitors GitHub repos, analyzes PRs, posts review summaries to Slack",
-    "integrations": ["github", "slack"],
-    "capabilities": ["code_execution"],
-    "scale": null,
-    "compliance": [],
-    "framework_preference": null,
-    "deployment_preference": null
-  },
-  "is_complete": false
-}
-
---- Example 3: Small business owner (salon) ---
-
-User: "I run a hair salon and I'm drowning in appointment changes and no-shows. Can this help?"
-
-{
-  "reply": "Absolutely — this is one of the most common things people use us for. Your AI assistant would manage your entire booking calendar: confirm appointments, send reminders the day before (so people actually show up), handle reschedules and cancellations, and even keep a waitlist so cancelled slots get filled fast. Do your clients usually book by phone, text, or online?",
-  "requirements": {
-    "use_case": "appointment_management",
-    "description": "AI scheduling assistant for hair salon — manages bookings, sends reminders, handles cancellations/reschedules, maintains waitlist",
-    "integrations": ["google-calendar"],
-    "capabilities": ["scheduling", "reminders", "memory"],
-    "scale": "low",
-    "compliance": [],
-    "framework_preference": null,
-    "deployment_preference": null
-  },
-  "is_complete": false
-}
+IMPORTANT: When calling get_framework_recommendation, include ALL relevant \
+integrations as server IDs. After calling it, present the results to the user \
+in a clear summary and ask them to confirm.
 
 ═══════════════════════════════════════════════════════════════
 REPO-TO-MCP / REPO-TO-SDK — When the user pastes a URL
 ═══════════════════════════════════════════════════════════════
 
-If the user's message contains a GitHub (HTTPS or SSH) or HuggingFace URL, the \
-system will automatically analyse the repository and inject a \
-"--- REPO ANALYSIS ---" block into your context.  When you see this block:
+If the user's message contains a GitHub or HuggingFace URL:
 
-1. Acknowledge the repo by name and describe what it does (from the README / \
-   description).
-2. Propose what to build: an MCP server wrapper (expose the repo's functionality \
-   as MCP tools), an SDK package, or both.
-3. Tailor the framework choice to the repo's language:
+1. Call the analyze_repository tool with the URL.
+2. Acknowledge the repo by name and describe what it does.
+3. Propose what to build: an MCP server wrapper, an SDK package, or both.
+4. Tailor the framework choice to the repo's language:
    - Python repo  → default to LangGraph or CrewAI
    - TypeScript/JS repo → default to Vercel AI SDK
    - Rust repo  → default to Rig
    - Go repo    → default to ADK-Go
-4. Set `use_case` to "repo_mcp_wrapper" or "repo_sdk_wrapper".
-5. Pre-populate `integrations` based on what the repo already uses (databases, \
-   APIs, etc. from the analysis).
-6. You may set is_complete=true after just 1–2 turns if the user clearly wants \
-   an MCP/SDK from the repo and no further clarification is needed.
-7. In your reply, be specific: reference actual files, entry points, and \
+5. You may call get_framework_recommendation after just 1–2 turns if the \
+   user clearly wants an MCP/SDK from the repo.
+6. In your reply, be specific: reference actual files, entry points, and \
    functions from the analysis.
-
-═══════════════════════════════════════════════════════════════
-OUTPUT FORMAT — Every response must be exactly this JSON
-═══════════════════════════════════════════════════════════════
-
-{
-  "reply": "your conversational response",
-  "requirements": {
-    "use_case": "string or null",
-    "description": "string or null",
-    "integrations": ["server-id-from-list-above"],
-    "capabilities": ["string"],
-    "scale": "low|medium|high or null",
-    "compliance": [],
-    "framework_preference": "langgraph|crewai|autogen|semantic-kernel or null",
-    "deployment_preference": "cloud|local|export or null"
-  },
-  "is_complete": false
-}
 """
 
 
-def _get_client() -> anthropic.Anthropic:
-    """Lazy-init the Anthropic client."""
-    return anthropic.Anthropic(api_key=settings.anthropic_api_key)
+_async_client: Optional[anthropic.AsyncAnthropic] = None
+
+
+def _get_client() -> anthropic.AsyncAnthropic:
+    """Lazy-init the async Anthropic client (reused across requests)."""
+    global _async_client
+    if _async_client is None:
+        _async_client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
+    return _async_client
 
 
 def _build_context_summary(session: WizardSession) -> str:
-    """Build a dynamic context snapshot of gathered requirements.
-
-    This is appended to the system prompt on every turn so Claude always
-    has a clear picture of the current state — even if the conversation
-    is long and earlier details would otherwise drift out of focus.
-    """
+    """Build a dynamic context snapshot of gathered requirements."""
     r = session.requirements
     parts: list[str] = []
     if r.use_case:
@@ -302,8 +236,6 @@ def _build_context_summary(session: WizardSession) -> str:
         "\n\n--- CONTEXT SNAPSHOT (gathered so far) ---\n"
         + "\n".join(f"• {p}" for p in parts)
         + "\n--- END SNAPSHOT ---\n"
-        "Use this snapshot to stay grounded. Update requirements to include "
-        "any new details the user provides this turn."
     )
 
 
@@ -316,23 +248,32 @@ def _build_messages(session: WizardSession) -> list[dict]:
     ]
 
 
-def _parse_llm_response(raw: str) -> dict:
-    """Parse the JSON response from Claude, handling common issues."""
-    text = raw.strip()
-    # Strip markdown code fences if present
-    if text.startswith("```"):
-        text = text.split("\n", 1)[1] if "\n" in text else text[3:]
-    if text.endswith("```"):
-        text = text[: text.rfind("```")]
-    return json.loads(text.strip())
+def _build_system_prompt(session: WizardSession) -> list[dict]:
+    """Build a system prompt with prompt caching.
+
+    Returns a list of content blocks with cache_control on the static
+    portion so it only gets billed once per session.
+    """
+    context_snapshot = _build_context_summary(session)
+    blocks = [
+        {
+            "type": "text",
+            "text": SYSTEM_PROMPT,
+            "cache_control": {"type": "ephemeral"},  # Cache the large static prompt
+        },
+    ]
+    if context_snapshot:
+        blocks.append({"type": "text", "text": context_snapshot})
+    return blocks
 
 
 async def process_message(
     session_id: Optional[str], user_message: str
 ) -> ChatResponse:
-    """Process one turn of the wizard conversation.
+    """Process one turn of the wizard conversation with tool use.
 
-    Returns a ChatResponse with the assistant reply and updated state.
+    Claude can call tools (search MCP servers, analyze repos, etc.)
+    during the conversation. We loop until Claude returns a final text.
     """
     # Get or create session
     if session_id:
@@ -344,29 +285,6 @@ async def process_message(
 
     # Append user message
     session.messages.append(Message(role=Role.USER, content=user_message))
-
-    # --- Detect repo URL and analyze if present ---
-    repo_context = ""
-    if contains_repo_url(user_message):
-        parsed = parse_repo_url(user_message)
-        if parsed:
-            _, owner, repo_name = parsed
-            logger.info("Detected repo URL in message: %s/%s", owner, repo_name)
-            try:
-                analysis = await analyze_repo(user_message)
-                if not analysis.error:
-                    session.requirements.repo_url = analysis.url
-                    session.requirements.repo_analysis = asdict(analysis)
-                    repo_context = format_repo_context(analysis)
-                    logger.info(
-                        "Repo analysis complete: %s/%s | lang=%s | fw=%s",
-                        analysis.owner, analysis.name,
-                        analysis.primary_language, analysis.detected_framework,
-                    )
-                else:
-                    logger.warning("Repo analysis error: %s", analysis.error)
-            except Exception as exc:
-                logger.warning("Failed to analyze repo: %s", exc)
 
     # --- Guard: API key ---
     if not settings.anthropic_api_key:
@@ -382,48 +300,98 @@ async def process_message(
             status=session.status,
         )
 
-    # --- Call Claude (with dynamic context snapshot + repo analysis) ---
+    # --- Call Claude with tool use loop ---
     try:
         client = _get_client()
-        context_snapshot = _build_context_summary(session)
-        system_with_context = SYSTEM_PROMPT + context_snapshot + repo_context
-        logger.info(
-            "Turn %d | session=%s | context_fields=%d",
-            len([m for m in session.messages if m.role == Role.USER]),
-            session.session_id,
-            sum(1 for v in [
-                session.requirements.use_case,
-                session.requirements.integrations,
-                session.requirements.capabilities,
-                session.requirements.scale,
-            ] if v),
-        )
-        response = client.messages.create(
-            model=settings.llm_model,
-            max_tokens=1024,
-            system=system_with_context,
-            messages=_build_messages(session),
-        )
-        raw_reply = response.content[0].text
-        parsed = _parse_llm_response(raw_reply)
+        system_blocks = _build_system_prompt(session)
+        api_messages = _build_messages(session)
+
+        turn_count = len([m for m in session.messages if m.role == Role.USER])
+        logger.info("Turn %d | session=%s", turn_count, session.session_id)
+
+        recommendation: Optional[Recommendation] = None
+        reply_text = ""
+        max_tool_rounds = 5  # safety limit
+
+        # Enable extended thinking after the first turn (when there's
+        # enough context for deeper architectural reasoning).
+        use_thinking = turn_count > 1
+
+        for tool_round in range(max_tool_rounds):
+            create_kwargs: Dict[str, Any] = dict(
+                model=settings.llm_model,
+                max_tokens=16000 if use_thinking else 2048,
+                system=system_blocks,
+                messages=api_messages,
+                tools=TOOLS,
+            )
+            if use_thinking:
+                create_kwargs["thinking"] = {
+                    "type": "enabled",
+                    "budget_tokens": 8000,
+                }
+
+            response = await client.messages.create(**create_kwargs)
+
+            # Collect text blocks and tool_use blocks from response
+            # (skip thinking blocks — they're internal reasoning)
+            text_parts: List[str] = []
+            tool_calls: List[Dict[str, Any]] = []
+
+            for block in response.content:
+                if block.type == "text":
+                    text_parts.append(block.text)
+                elif block.type == "tool_use":
+                    tool_calls.append({
+                        "id": block.id,
+                        "name": block.name,
+                        "input": block.input,
+                    })
+                # thinking blocks are silently skipped
+
+            # If no tool calls, Claude is done — extract final text
+            if not tool_calls:
+                reply_text = "\n".join(text_parts)
+                break
+
+            # Execute tool calls and build tool results
+            logger.info(
+                "Tool round %d: %s",
+                tool_round + 1,
+                [tc["name"] for tc in tool_calls],
+            )
+
+            # Append Claude's response (with tool_use blocks) to messages
+            api_messages.append({"role": "assistant", "content": response.content})
+
+            # Build tool_result messages
+            tool_results = []
+            for tc in tool_calls:
+                result_str = await execute_tool(tc["name"], tc["input"])
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": tc["id"],
+                    "content": result_str,
+                })
+
+                # Extract recommendation if this was the recommendation tool
+                if tc["name"] == "get_framework_recommendation":
+                    recommendation = _extract_recommendation(result_str, tc["input"], session)
+
+                # Extract repo analysis if this was the analyze tool
+                if tc["name"] == "analyze_repository":
+                    _extract_repo_analysis(result_str, session)
+
+            api_messages.append({"role": "user", "content": tool_results})
+        else:
+            # Exhausted tool rounds — use whatever text we have
+            reply_text = reply_text or "I gathered a lot of information. Let me summarize what I found."
+
     except (anthropic.AuthenticationError, TypeError):
         logger.error("Anthropic API key missing or invalid")
         reply_text = (
             "⚠️ The Anthropic API key is invalid. "
             "Please check your ANTHROPIC_API_KEY in .env."
-        )
-        session.messages.append(Message(role=Role.ASSISTANT, content=reply_text))
-        sessions.save(session)
-        return ChatResponse(
-            session_id=session.session_id,
-            reply=reply_text,
-            status=session.status,
-        )
-    except (json.JSONDecodeError, KeyError, IndexError) as exc:
-        logger.warning("Failed to parse LLM response: %s", exc)
-        reply_text = (
-            "I had a small hiccup processing that — could you rephrase? "
-            "Tell me what kind of agent you'd like to build."
         )
         session.messages.append(Message(role=Role.ASSISTANT, content=reply_text))
         sessions.save(session)
@@ -443,35 +411,12 @@ async def process_message(
             status=session.status,
         )
 
-    # --- Update requirements from LLM output ---
-    reply_text = parsed.get("reply", "")
-    llm_reqs = parsed.get("requirements", {})
-    is_complete = parsed.get("is_complete", False)
-
-    # Merge LLM-extracted requirements into session
-    if llm_reqs:
-        for field in (
-            "use_case", "description", "scale",
-            "framework_preference", "deployment_preference",
-        ):
-            val = llm_reqs.get(field)
-            if val:
-                setattr(session.requirements, field, val)
-        for list_field in ("integrations", "capabilities", "compliance"):
-            vals = llm_reqs.get(list_field, [])
-            if vals:
-                existing = set(getattr(session.requirements, list_field))
-                existing.update(vals)
-                setattr(session.requirements, list_field, sorted(existing))
-
     # Append assistant reply
     session.messages.append(Message(role=Role.ASSISTANT, content=reply_text))
 
-    # --- If complete, produce recommendation ---
-    recommendation: Optional[Recommendation] = None
-    if is_complete:
+    # If recommendation was produced, update session
+    if recommendation:
         session.status = SessionStatus.RECOMMENDING
-        recommendation = build_recommendation(session.requirements)
         session.recommendation = recommendation
         session.status = SessionStatus.CONFIRMED
 
@@ -484,3 +429,254 @@ async def process_message(
         requirements=session.requirements,
         recommendation=recommendation,
     )
+
+
+# ---------------------------------------------------------------------------
+# Streaming version — yields SSE event dicts
+# ---------------------------------------------------------------------------
+
+async def process_message_stream(
+    session_id: Optional[str], user_message: str
+):
+    """Streaming version of process_message.
+
+    Yields dicts like:
+        {"event": "status",  "data": "Searching MCP servers..."}
+        {"event": "delta",   "data": "partial text"}
+        {"event": "done",    "data": <full ChatResponse JSON>}
+    """
+    # Get or create session
+    if session_id:
+        session = sessions.get(session_id)
+        if not session:
+            session = sessions.create()
+    else:
+        session = sessions.create()
+
+    session.messages.append(Message(role=Role.USER, content=user_message))
+
+    if not settings.anthropic_api_key:
+        reply = "⚠️ The Anthropic API key is not configured."
+        session.messages.append(Message(role=Role.ASSISTANT, content=reply))
+        sessions.save(session)
+        yield {"event": "delta", "data": reply}
+        yield {"event": "done", "data": json.dumps({
+            "session_id": session.session_id, "reply": reply,
+            "status": session.status.value, "requirements": None, "recommendation": None,
+        })}
+        return
+
+    try:
+        client = _get_client()
+        system_blocks = _build_system_prompt(session)
+        api_messages = _build_messages(session)
+        turn_count = len([m for m in session.messages if m.role == Role.USER])
+        use_thinking = turn_count > 1
+
+        recommendation: Optional[Recommendation] = None
+        full_text = ""
+        max_tool_rounds = 5
+
+        _TOOL_STATUS = {
+            "search_mcp_servers": "🔍 Searching MCP servers…",
+            "get_mcp_server_details": "📋 Fetching server details…",
+            "search_templates": "📑 Searching templates…",
+            "analyze_repository": "🔬 Analyzing repository…",
+            "get_framework_recommendation": "⚙️ Building recommendation…",
+        }
+
+        for tool_round in range(max_tool_rounds):
+            create_kwargs: Dict[str, Any] = dict(
+                model=settings.llm_model,
+                max_tokens=16000 if use_thinking else 2048,
+                system=system_blocks,
+                messages=api_messages,
+                tools=TOOLS,
+            )
+            if use_thinking:
+                create_kwargs["thinking"] = {"type": "enabled", "budget_tokens": 8000}
+
+            # Use streaming for the API call
+            streamed_text_parts: List[str] = []
+            tool_calls: List[Dict[str, Any]] = []
+            current_tool_input = ""
+            current_tool_name = ""
+            current_tool_id = ""
+
+            final_message = None
+            async with client.messages.stream(**create_kwargs) as stream:
+                async for event in stream:
+                    if event.type == "content_block_start":
+                        block = event.content_block
+                        if block.type == "tool_use":
+                            current_tool_name = block.name
+                            current_tool_id = block.id
+                            current_tool_input = ""
+                            status_msg = _TOOL_STATUS.get(block.name, f"🔧 Using {block.name}…")
+                            yield {"event": "status", "data": status_msg}
+                    elif event.type == "content_block_delta":
+                        delta = event.delta
+                        if delta.type == "text_delta":
+                            streamed_text_parts.append(delta.text)
+                            yield {"event": "delta", "data": delta.text}
+                        elif delta.type == "input_json_delta":
+                            current_tool_input += delta.partial_json
+                    elif event.type == "content_block_stop":
+                        if current_tool_name:
+                            try:
+                                parsed_input = json.loads(current_tool_input) if current_tool_input else {}
+                            except json.JSONDecodeError:
+                                parsed_input = {}
+                            tool_calls.append({
+                                "id": current_tool_id,
+                                "name": current_tool_name,
+                                "input": parsed_input,
+                            })
+                            current_tool_name = ""
+                # Get the accumulated message before exiting async with
+                final_message = await stream.get_final_message()
+
+            # If no tool calls, we're done
+            if not tool_calls:
+                full_text = "".join(streamed_text_parts)
+                break
+
+            # Execute tools (non-streaming) and feed results back
+            api_messages.append({"role": "assistant", "content": final_message.content})
+
+            tool_results = []
+            for tc in tool_calls:
+                result_str = await execute_tool(tc["name"], tc["input"])
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": tc["id"],
+                    "content": result_str,
+                })
+                if tc["name"] == "get_framework_recommendation":
+                    recommendation = _extract_recommendation(result_str, tc["input"], session)
+                if tc["name"] == "analyze_repository":
+                    _extract_repo_analysis(result_str, session)
+
+            api_messages.append({"role": "user", "content": tool_results})
+        else:
+            full_text = full_text or "I gathered a lot of information. Let me summarize what I found."
+
+    except Exception as exc:
+        logger.exception("Streaming error: %s", exc)
+        full_text = "Something went wrong on my end. Please try again."
+        session.messages.append(Message(role=Role.ASSISTANT, content=full_text))
+        sessions.save(session)
+        yield {"event": "delta", "data": full_text}
+        yield {"event": "done", "data": json.dumps({
+            "session_id": session.session_id, "reply": full_text,
+            "status": session.status.value, "requirements": None, "recommendation": None,
+        })}
+        return
+
+    # Finalize session
+    session.messages.append(Message(role=Role.ASSISTANT, content=full_text))
+    if recommendation:
+        session.status = SessionStatus.RECOMMENDING
+        session.recommendation = recommendation
+        session.status = SessionStatus.CONFIRMED
+    sessions.save(session)
+
+    # Send the final done event with full structured response
+    done_data = {
+        "session_id": session.session_id,
+        "reply": full_text,
+        "status": session.status.value,
+        "requirements": None,
+        "recommendation": None,
+    }
+    if session.requirements:
+        done_data["requirements"] = {
+            "use_case": session.requirements.use_case,
+            "description": session.requirements.description,
+            "integrations": session.requirements.integrations,
+            "capabilities": session.requirements.capabilities,
+            "scale": session.requirements.scale,
+            "compliance": session.requirements.compliance,
+            "framework_preference": session.requirements.framework_preference.value if session.requirements.framework_preference else None,
+            "deployment_preference": session.requirements.deployment_preference.value if session.requirements.deployment_preference else None,
+        }
+    if recommendation:
+        done_data["recommendation"] = {
+            "framework": recommendation.framework.value,
+            "framework_reason": recommendation.framework_reason,
+            "agents": recommendation.agents,
+            "mcp_servers": recommendation.mcp_servers,
+            "deployment": recommendation.deployment.value,
+            "estimated_monthly_cost": recommendation.estimated_monthly_cost,
+            "summary": recommendation.summary,
+        }
+    yield {"event": "done", "data": json.dumps(done_data)}
+
+
+# ---------------------------------------------------------------------------
+# Helpers for extracting structured data from tool results
+# ---------------------------------------------------------------------------
+
+def _extract_recommendation(
+    result_str: str, tool_input: Dict[str, Any], session: WizardSession
+) -> Optional[Recommendation]:
+    """Parse the get_framework_recommendation tool result into a Recommendation."""
+    try:
+        data = json.loads(result_str)
+        if "error" in data:
+            return None
+
+        # Also update session requirements from the tool input
+        if tool_input.get("use_case"):
+            session.requirements.use_case = tool_input["use_case"]
+        if tool_input.get("description"):
+            session.requirements.description = tool_input["description"]
+        if tool_input.get("integrations"):
+            existing = set(session.requirements.integrations)
+            existing.update(tool_input["integrations"])
+            session.requirements.integrations = sorted(existing)
+        if tool_input.get("capabilities"):
+            existing = set(session.requirements.capabilities)
+            existing.update(tool_input["capabilities"])
+            session.requirements.capabilities = sorted(existing)
+        if tool_input.get("scale"):
+            session.requirements.scale = tool_input["scale"]
+        if tool_input.get("compliance"):
+            existing = set(session.requirements.compliance)
+            existing.update(tool_input["compliance"])
+            session.requirements.compliance = sorted(existing)
+        if tool_input.get("framework_preference"):
+            try:
+                session.requirements.framework_preference = FrameworkChoice(tool_input["framework_preference"])
+            except ValueError:
+                pass
+        if tool_input.get("deployment_preference"):
+            try:
+                session.requirements.deployment_preference = DeploymentTarget(tool_input["deployment_preference"])
+            except ValueError:
+                pass
+
+        return Recommendation(
+            framework=FrameworkChoice(data["framework"]),
+            framework_reason=data.get("framework_reason", ""),
+            agents=data.get("agents", []),
+            mcp_servers=data.get("mcp_servers", []),
+            deployment=DeploymentTarget(data.get("deployment", "cloud")),
+            estimated_monthly_cost=data.get("estimated_monthly_cost"),
+            summary=data.get("summary", ""),
+        )
+    except Exception as exc:
+        logger.warning("Failed to extract recommendation: %s", exc)
+        return None
+
+
+def _extract_repo_analysis(result_str: str, session: WizardSession) -> None:
+    """Store repo analysis results in the session."""
+    try:
+        data = json.loads(result_str)
+        if data.get("error"):
+            return
+        session.requirements.repo_url = data.get("url", "")
+        session.requirements.repo_analysis = data
+    except Exception as exc:
+        logger.warning("Failed to extract repo analysis: %s", exc)
