@@ -207,6 +207,7 @@ _DEPLOY_CONFIGS: List[tuple[str, str, str]] = [
     ("railway.toml", "railway_toml.j2", "toml"),
     ("render.yaml", "render_yaml.j2", "yaml"),
     ("vercel.json", "vercel_json.j2", "json"),
+    ("wrangler.toml", "wrangler_toml.j2", "toml"),
     ("k8s/deployment.yaml", "k8s_deployment.yaml.j2", "yaml"),
     ("k8s/service.yaml", "k8s_service.yaml.j2", "yaml"),
     ("sam/template.yaml", "sam_template.yaml.j2", "yaml"),

@@ -6,7 +6,7 @@ category filtering, search, and health-status tracking.
 
 from typing import Dict, List, Optional
 
-from app.models.mcp import MCPCategory, MCPServerEntry, MCPServerStatus
+from app.models.mcp import MCPCategory, MCPServerEntry, MCPServerStatus, MCPToolSchema
 
 
 # ---------------------------------------------------------------------------
@@ -577,16 +577,34 @@ _reg(MCPServerEntry(
 
 _reg(MCPServerEntry(
     id="cloudflare",
-    name="Cloudflare",
-    description="Manage Cloudflare Workers, KV, R2, D1, DNS, and zones.",
+    name="Cloudflare (Code Mode)",
+    description=(
+        "Full Cloudflare API via Code Mode — DNS, Workers, R2, D1, KV, WAF, "
+        "Zero Trust, and 2,500+ endpoints through just 2 tools (search + execute). "
+        "Uses OAuth 2.1; ~1,000 tokens instead of 1.17M for equivalent native MCP."
+    ),
     category=MCPCategory.DEV_TOOLS,
-    command="npx",
-    args=["-y", "@cloudflare/mcp-server-cloudflare"],
-    required_env=["CLOUDFLARE_API_TOKEN"],
-    optional_env=["CLOUDFLARE_ACCOUNT_ID"],
-    npm_package="@cloudflare/mcp-server-cloudflare",
+    command="",
+    args=[],
+    endpoint_url="https://mcp.cloudflare.com/mcp",
+    required_env=[],
+    optional_env=["CLOUDFLARE_API_TOKEN"],
+    documentation_url="https://github.com/cloudflare/mcp-server-cloudflare",
     icon="🔶",
-    tags=["cdn", "workers", "edge", "dns", "serverless"],
+    tags=["cdn", "workers", "edge", "dns", "serverless", "r2", "d1", "kv",
+          "waf", "zero-trust", "code-mode", "cloudflare"],
+    tools=[
+        MCPToolSchema(
+            name="search",
+            description="Search the Cloudflare OpenAPI spec. Write JavaScript to filter endpoints by product, path, or tags.",
+            input_schema={"type": "object", "properties": {"code": {"type": "string", "description": "JavaScript async arrow function to search the OpenAPI spec"}}, "required": ["code"]},
+        ),
+        MCPToolSchema(
+            name="execute",
+            description="Execute JavaScript code against the Cloudflare API. Write code using cloudflare.request() to make authenticated API calls.",
+            input_schema={"type": "object", "properties": {"code": {"type": "string", "description": "JavaScript async arrow function to execute"}}, "required": ["code"]},
+        ),
+    ],
 ))
 
 # ---- Productivity (additional) ----
