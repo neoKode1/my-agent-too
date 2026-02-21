@@ -8,13 +8,24 @@ This package wraps [{{ repo_name }}]({{ repo_url }}) as an **MCP (Model Context 
 
 {{ repo_description }}
 
-## Available MCP Tools
+## Code Mode — 2 Tools, Full Access
+
+This server uses the **Code Mode** pattern (~500 tokens) instead of one-tool-per-operation:
 
 | Tool | Description |
 |------|-------------|
-| `run_{{ repo_name_safe }}` | Run the main functionality of {{ repo_name }} |
-| `list_{{ repo_name_safe }}_files` | List files and directories in the repo |
-| `read_{{ repo_name_safe }}_file` | Read the contents of a file in the repo |
+| `search` | Explore the repo — list files, read docs, inspect modules. Write Python against a manifest. |
+| `execute` | Run Python code against {{ repo_name }} — import modules, call functions, run scripts. |
+
+### Example: discover what's in the repo
+```json
+{"name": "search", "arguments": {"code": "result = [f for f in manifest['files'] if f.endswith('.py')]"}}
+```
+
+### Example: run a function
+```json
+{"name": "execute", "arguments": {"code": "from {{ repo_name_safe }} import main; result = main.run()"}}
+```
 
 ## Quick Start
 
