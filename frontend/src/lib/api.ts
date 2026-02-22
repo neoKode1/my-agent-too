@@ -282,6 +282,9 @@ export interface MCPToolSchema {
   name: string;
   description: string;
   input_schema: Record<string, unknown>;
+  safety_level: "safe" | "moderate" | "dangerous";
+  task_name_active: string | null;
+  task_name_complete: string | null;
 }
 
 export interface MCPServerEntry {
